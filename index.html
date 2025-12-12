@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>SK Youth Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <!-- Role Selection -->
+        <div id="role-selection" class="container">
+            <div class="login-container">
+                <div class="text-center mb-large">
+                    <h1 class="gradient-text">SK Youth Management System</h1>
+                    <p class="text-gray">Select your role to continue</p>
+                </div>
+                
+                <div class="role-grid">
+                    <button onclick="selectRole('youth')" class="role-card">
+                        <div class="role-icon youth-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h2 class="youth-color">Youth User</h2>
+                        <p class="text-gray text-center">
+                            Access events, opportunities, and community activities
+                        </p>
+                    </button>
+
+                    <button onclick="selectRole('admin')" class="role-card">
+                        <div class="role-icon admin-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="admin-color">SK Official</h2>
+                        <p class="text-gray text-center">
+                            Manage events, users, and monitor youth activities
+                        </p>
+                    </button>
+                </div>
+
+                <div class="demo-credentials">
+                    <p>Demo Credentials:</p>
+                    <p>Youth: maria@youth.com / juan@youth.com</p>
+                    <p>Admin: admin@sk.gov</p>
+                    <p class="text-sm">(Password: any text)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="container" style="display: none;">
+            <div class="login-form-container">
+                <button onclick="backToRoleSelection()" class="back-button">
+                    ← Back to role selection
+                </button>
+
+                <div class="login-card">
+                    <div class="text-center mb-large">
+                        <div id="login-icon" class="login-form-icon"></div>
+                        <h2 id="login-title"></h2>
+                        <p class="text-gray">Enter your credentials to continue</p>
+                    </div>
+
+                    <form id="login-form-element" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="login-email" placeholder="Enter your email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="login-password" placeholder="Enter your password" required>
+                        </div>
+
+                        <div id="login-error" class="error-message" style="display: none;"></div>
+
+                        <button type="submit" id="login-submit-btn" class="btn btn-primary w-full">
+                            Sign In
+                        </button>
+                    </form>
+
+                    <div class="demo-credentials">
+                        <p>Demo Credentials:</p>
+                        <p id="login-demo-email"></p>
+                        <p>(Any password works)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Youth Dashboard -->
+    <div id="youth-dashboard" class="screen dashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="youth-color">SK Youth Portal</h1>
+                <p id="youth-user-name" class="text-gray"></p>
+            </div>
+
+            <nav class="sidebar-nav" id="youth-nav">
+                <!-- Navigation items will be inserted here -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="logout-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content" id="youth-content">
+            <!-- Youth content wil be loaded here -->
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="screen dashboard">
+        <div class="sidebar admin-sidebar">
+            <div class="sidebar-header">
+                <h1 class="admin-color">SK Admin Portal</h1>
+                <p id="admin-user-name" class="text-gray"></p>
+            </div>
+
+            <nav class="sidebar-nav" id="admin-nav">
+                <!-- Navigation items will be inserted here -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="logout-btn logout-btn-admin">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content" id="admin-content">
+            <!-- Admin content will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modal-title"></h3>
+                <button onclick="closeModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="youth-module.js"></script>
+    <script src="admin-module.js"></script>
+</body>
+</html>
