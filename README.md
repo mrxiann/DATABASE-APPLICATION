@@ -1,2 +1,2 @@
 # Python version of the SK Management Info System
-might as well utilize this repo for da python version
+might as well utilize dis repo for da python version
