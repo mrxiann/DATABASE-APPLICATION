@@ -1,5 +1,3 @@
-
-
 Run these commands in shell or cmd in order to run the app:
 
 # 1. Install Python packages
