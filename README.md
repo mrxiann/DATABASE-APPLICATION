@@ -1,8 +1,7 @@
 # Python version of the SK Management Info System
 might as well utilize dis repo for da python version
 
-` 
-### Admin Account:
+` ### Admin Account:
 
 Email: admin@sk.ph
 
@@ -18,5 +17,4 @@ youth3@example.com
 youth4@example.com  
 youth5@example.com  
 
-Password: youth123
-`
+Password: youth123 `
