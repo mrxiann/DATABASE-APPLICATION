@@ -2,7 +2,6 @@ import mysql.connector
 from mysql.connector import Error
 
 def test_sk_database():
-    """Test SK Youth Portal Database"""
     print("🔍 Testing SK Youth Portal Database")
     print("=" * 50)
     
@@ -16,69 +15,78 @@ def test_sk_database():
         
         cursor = connection.cursor(dictionary=True)
         
-        # Test 1: Check database exists
-        cursor.execute("SELECT DATABASE()")
-        db_name = cursor.fetchone()['DATABASE()']
-        print(f"✅ Connected to database: {db_name}")
+        # Test 1: Check all users
+        print("👥 ALL User Accounts in Database:")
+        print("-" * 50)
+        cursor.execute("SELECT id, name, email, role, status, youth_id FROM users ORDER BY role, id")
+        all_users = cursor.fetchall()
         
-        # Test 2: List all tables
-        cursor.execute("SHOW TABLES")
-        tables = cursor.fetchall()
+        for user in all_users:
+            print(f"ID: {user['id']}")
+            print(f"  Name: {user['name']}")
+            print(f"  Email: {user['email']}")
+            print(f"  Role: {user['role']}")
+            print(f"  Youth ID: {user['youth_id']}")
+            print(f"  Status: {user['status']}")
+            print("-" * 30)
         
-        print("\n📋 Database Tables:")
-        print("-" * 30)
-        for table in tables:
-            table_name = list(table.values())[0]
-            cursor.execute(f"SELECT COUNT(*) as count FROM {table_name}")
-            count = cursor.fetchone()['count']
-            print(f"• {table_name:25} | {count:3} records")
+        # Test 2: Test login with correct credentials
+        print("\n🔐 Testing Login Credentials:")
+        print("-" * 50)
         
-        # Test 3: Test user credentials
-        print("\n👥 Testing User Accounts:")
-        print("-" * 30)
-        
-        test_users = [
+        # Test credentials - use emails from your actual database
+        test_credentials = [
             ("admin@sk.ph", "admin123"),
-            ("youth@example.com", "youth123"),
-            ("yes@example.com", "123")
+            ("youth1@example.com", "youth123"),
+            ("youth2@example.com", "youth123"),
+            ("youth3@example.com", "youth123"),
+            ("youth4@example.com", "youth123"),
+            ("youth5@example.com", "youth123"),
         ]
         
-        for email, password in test_users:
+        for email, password in test_credentials:
+            # Since passwords are SHA-256 hashed, we need to hash the input
+            import hashlib
+            hashed_password = hashlib.sha256(password.encode()).hexdigest()
+            
             query = """
                 SELECT id, name, email, role, status, youth_id 
                 FROM users 
-                WHERE email = %s AND password = SHA2(%s, 256)
+                WHERE email = %s AND password = %s
             """
-            cursor.execute(query, (email, password))
+            cursor.execute(query, (email, hashed_password))
             user = cursor.fetchone()
             
             if user:
-                print(f"✅ {user['role'].upper()}: {user['email']}")
+                print(f"✅ SUCCESS: {user['email']}")
                 print(f"   Name: {user['name']}")
-                print(f"   Youth ID: {user['youth_id']}")
-                print(f"   Status: {user['status']}")
+                print(f"   Role: {user['role']}")
+                print(f"   User ID: {user['id']}")
             else:
-                print(f"❌ {email} - Invalid credentials")
+                # Let's check what hash is actually stored
+                cursor.execute("SELECT password FROM users WHERE email = %s", (email,))
+                stored_hash = cursor.fetchone()
+                if stored_hash:
+                    print(f"❌ FAILED: {email}")
+                    print(f"   Input hash: {hashed_password[:20]}...")
+                    print(f"   Stored hash: {stored_hash['password'][:20]}...")
+                    print(f"   Hashes match: {hashed_password == stored_hash['password']}")
+                else:
+                    print(f"❌ User not found: {email}")
             print("-" * 30)
         
-        # Test 4: Check sample data
-        print("\n📊 Sample Data Check:")
-        print("-" * 30)
+        # Test 3: Verify password hashes
+        print("\n🔑 Password Verification:")
+        print("-" * 50)
         
-        # Check events
-        cursor.execute("SELECT COUNT(*) as count FROM events")
-        events_count = cursor.fetchone()['count']
-        print(f"Events: {events_count} (Sample: 5)")
+        # Get all users with their password hashes
+        cursor.execute("SELECT email, password FROM users")
+        users_with_passwords = cursor.fetchall()
         
-        # Check opportunities
-        cursor.execute("SELECT COUNT(*) as count FROM opportunities")
-        opp_count = cursor.fetchone()['count']
-        print(f"Opportunities: {opp_count} (Sample: 4)")
-        
-        # Check users
-        cursor.execute("SELECT COUNT(*) as count FROM users")
-        users_count = cursor.fetchone()['count']
-        print(f"Users: {users_count} (Sample: 3)")
+        for user in users_with_passwords:
+            email = user['email']
+            stored_hash = user['password']
+            print(f"{email:25} | {stored_hash[:32]}...")
         
         cursor.close()
         connection.close()
@@ -88,10 +96,6 @@ def test_sk_database():
         
     except Error as e:
         print(f"❌ Database Error: {e}")
-        print("\n🔧 Troubleshooting:")
-        print("1. Make sure MySQL is running in XAMPP")
-        print("2. Check if database 'sk_youth_portal' exists")
-        print("3. Import sk_youth_portal.sql if needed")
 
 if __name__ == "__main__":
     test_sk_database()
