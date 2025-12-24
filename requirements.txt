@@ -1,3 +1,2 @@
-tkinter>=8.6
 mysql-connector-python>=8.1.0
 qrcode[pil]>=7.4.2
