@@ -281,9 +281,9 @@ class LoginWindow:
             else:
                 canvas.bind("<Button-1>", lambda e, v=value: [self.update_radio_buttons(role_frame, v)])
         
-        # Login button
+        # Login button - FIXED: Use lambda to defer the method call
         self.login_btn = ModernButton(form_frame, text="Sign In", 
-                                     command=self.do_login, 
+                                     command=lambda: self.do_login(), 
                                      width=320, height=48, 
                                      bg='#4f46e5', fg='white',
                                      font=('Segoe UI', 13, 'bold'), radius=12)
@@ -339,37 +339,37 @@ class LoginWindow:
                                         widget.itemconfig(inner, fill='white')
                                         widget.itemconfig(indicator, outline='#cbd5e1')
     
-        def do_login(self):
-            email = self.email.get()
-            pwd = self.password.get()
-            role = self.role.get()
-            
-            if not email or not pwd:
-                messagebox.showerror("Error", "Please fill all fields")
-                return
-            
-            if not self.app.db:
-                messagebox.showerror("Error", "Database not connected")
-                return
-            
-            hashed = hashlib.sha256(pwd.encode()).hexdigest()
-            
-            cursor = self.app.db.cursor(dictionary=True)
-            
-            cursor.execute(
-                "SELECT * FROM users WHERE email = %s AND password = %s AND role = %s AND status = 'active'",
-                (email, hashed, role)
-            )
-            user = cursor.fetchone()
-            cursor.close()
-            
-            if user:
-                if role == 'admin':
-                    self.app.show_admin_dashboard(user)
-                else:
-                    self.app.show_youth_dashboard(user)
+    def do_login(self):
+        email = self.email.get()
+        pwd = self.password.get()
+        role = self.role.get()
+        
+        if not email or not pwd:
+            messagebox.showerror("Error", "Please fill all fields")
+            return
+        
+        if not self.app.db:
+            messagebox.showerror("Error", "Database not connected")
+            return
+        
+        hashed = hashlib.sha256(pwd.encode()).hexdigest()
+        
+        cursor = self.app.db.cursor(dictionary=True)
+        
+        cursor.execute(
+            "SELECT * FROM users WHERE email = %s AND password = %s AND role = %s AND status = 'active'",
+            (email, hashed, role)
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        
+        if user:
+            if role == 'admin':
+                self.app.show_admin_dashboard(user)
             else:
-                messagebox.showerror("Error", "Invalid login credentials or account not active")
+                self.app.show_youth_dashboard(user)
+        else:
+            messagebox.showerror("Error", "Invalid login credentials or account not active")
     
     def register(self):
         win = tk.Toplevel(self.app.root)
