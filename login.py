@@ -238,50 +238,35 @@ class LoginWindow:
         self.password.pack(fill='x', pady=(0, 25))
         self.password.insert(0, "admin123")
         
-        # Role selection
+        # Role selection - SIMPLIFIED VERSION
+        tk.Label(form_frame, text="Login as:", bg='white', 
+                font=('Segoe UI', 11), fg='#475569').pack(anchor='w', pady=(0, 5))
+
+        self.role = tk.StringVar(value="admin")
+        
+        # Create a frame for radio buttons
         role_frame = tk.Frame(form_frame, bg='white')
         role_frame.pack(fill='x', pady=(0, 25))
         
-        tk.Label(role_frame, text="Login as:", bg='white', 
-                font=('Segoe UI', 11), fg='#475569').pack(side='left', padx=(0, 20))
+        # Youth radio button
+        youth_rb = tk.Radiobutton(role_frame, text="Youth", variable=self.role, 
+                                 value="youth", bg='white', font=('Segoe UI', 11),
+                                 command=lambda: print("DEBUG: Role set to youth"))
+        youth_rb.pack(side='left', padx=(0, 20))
         
-        self.role = tk.StringVar(value="admin")
+        # Admin radio button  
+        admin_rb = tk.Radiobutton(role_frame, text="Admin", variable=self.role,
+                                 value="admin", bg='white', font=('Segoe UI', 11),
+                                 command=lambda: print("DEBUG: Role set to admin"))
+        admin_rb.pack(side='left')
         
-        # Modern radio buttons
-        roles = [("Youth", "youth"), ("Admin", "admin")]
-        for text, value in roles:
-            rb_frame = tk.Frame(role_frame, bg='white')
-            rb_frame.pack(side='left', padx=(0, 15))
-            
-            canvas = tk.Canvas(rb_frame, width=24, height=24, bg='white', highlightthickness=0)
-            canvas.pack(side='left')
-            
-            # Create radio button indicator
-            indicator = canvas.create_oval(4, 4, 20, 20, outline='#cbd5e1', width=2, fill='white')
-            inner = canvas.create_oval(8, 8, 16, 16, outline='', fill='#4f46e5' if value == "admin" else 'white')
-            
-            def create_radio_cmd(val, canv=canvas, ind=inner, indicator_obj=indicator):
-                return lambda: [self.role.set(val), 
-                               canv.itemconfig(ind, fill='#4f46e5' if self.role.get() == val else 'white'),
-                               canv.itemconfig(indicator_obj, outline='#4f46e5' if self.role.get() == val else '#cbd5e1')]
-            
-            canvas.bind("<Button-1>", lambda e, v=value, c=canvas, i=inner, ind=indicator: 
-                       [self.role.set(v), c.itemconfig(i, fill='#4f46e5'), c.itemconfig(ind, outline='#4f46e5')])
-            canvas.bind("<Enter>", lambda e, c=canvas, ind=indicator, v=value: 
-                       c.itemconfig(ind, outline='#94a3b8' if self.role.get() != v else '#4f46e5'))
-            canvas.bind("<Leave>", lambda e, c=canvas, ind=indicator, v=value: 
-                       c.itemconfig(ind, outline='#4f46e5' if self.role.get() == v else '#cbd5e1'))
-            
-            tk.Label(rb_frame, text=text, bg='white', font=('Segoe UI', 11), 
-                    fg='#475569').pack(side='left', padx=(8, 0))
-            
-            # Update the other radio button when one is clicked
-            if value == "admin":
-                canvas.bind("<Button-1>", lambda e, v=value: [self.update_radio_buttons(role_frame, v)])
-            else:
-                canvas.bind("<Button-1>", lambda e, v=value: [self.update_radio_buttons(role_frame, v)])
+        # Test button to see current role
+        test_btn = tk.Button(role_frame, text="Test Role", 
+                            command=lambda: print(f"DEBUG: Current role: {self.role.get()}"),
+                            font=('Segoe UI', 10), bg='#f1f5f9')
+        test_btn.pack(side='left', padx=20)
         
-        # Login button - FIXED: Use lambda to defer the method call
+        # Login button
         self.login_btn = ModernButton(form_frame, text="Sign In", 
                                      command=lambda: self.do_login(), 
                                      width=320, height=48, 
@@ -312,37 +297,16 @@ class LoginWindow:
                 bg='white', font=('Segoe UI', 10), fg='#94a3b8').pack()
         
         self.app.root.bind('<Return>', lambda e: self.do_login())
-        
-        # Initial radio button state
-        self.update_radio_buttons(role_frame, "admin")
-    
-    def update_radio_buttons(self, parent_frame, selected_value):
-        """Update all radio button visual states"""
-        for child in parent_frame.winfo_children():
-            if isinstance(child, tk.Frame):
-                for widget in child.winfo_children():
-                    if isinstance(widget, tk.Canvas):
-                        # Get the value from the label next to this canvas
-                        for sibling in child.winfo_children():
-                            if isinstance(sibling, tk.Label):
-                                value = "admin" if "Admin" in sibling.cget("text") else "youth"
-                                # Find the oval shapes
-                                items = widget.find_all()
-                                if len(items) >= 2:
-                                    indicator = items[0]  # Outer circle
-                                    inner = items[1]     # Inner circle
-                                    
-                                    if value == selected_value:
-                                        widget.itemconfig(inner, fill='#4f46e5')
-                                        widget.itemconfig(indicator, outline='#4f46e5')
-                                    else:
-                                        widget.itemconfig(inner, fill='white')
-                                        widget.itemconfig(indicator, outline='#cbd5e1')
     
     def do_login(self):
         email = self.email.get()
         pwd = self.password.get()
         role = self.role.get()
+        
+        print(f"=== LOGIN ATTEMPT ===")
+        print(f"Email: {email}")
+        print(f"Password length: {len(pwd)}")
+        print(f"Role selected: {role}")
         
         if not email or not pwd:
             messagebox.showerror("Error", "Please fill all fields")
@@ -353,6 +317,7 @@ class LoginWindow:
             return
         
         hashed = hashlib.sha256(pwd.encode()).hexdigest()
+        print(f"Password hash: {hashed[:20]}...")
         
         cursor = self.app.db.cursor(dictionary=True)
         
@@ -363,12 +328,16 @@ class LoginWindow:
         user = cursor.fetchone()
         cursor.close()
         
+        print(f"User found in DB: {user is not None}")
+        
         if user:
+            print(f"Login successful for {user['name']} ({user['role']})")
             if role == 'admin':
                 self.app.show_admin_dashboard(user)
             else:
                 self.app.show_youth_dashboard(user)
         else:
+            print("Login failed - user not found or wrong credentials")
             messagebox.showerror("Error", "Invalid login credentials or account not active")
     
     def register(self):

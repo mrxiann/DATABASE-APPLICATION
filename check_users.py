@@ -11,7 +11,6 @@ conn = mysql.connector.connect(
 
 cursor = conn.cursor(dictionary=True)
 
-# Check all users
 cursor.execute("SELECT id, name, email, role, status, password FROM users")
 users = cursor.fetchall()
 
@@ -30,6 +29,5 @@ for user in users:
 cursor.close()
 conn.close()
 
-# Check what hash 'youth123' produces
 hashed_youth = hashlib.sha256('youth123'.encode()).hexdigest()
 print(f"\nHash for 'youth123': {hashed_youth}")
