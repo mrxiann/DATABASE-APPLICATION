@@ -1,6 +1,4 @@
-# ui_utils.py
 import tkinter as tk
-from PIL import Image, ImageDraw, ImageTk
 
 class RoundedFrame:
     def __init__(self, parent, radius=20, **kwargs):
@@ -9,15 +7,30 @@ class RoundedFrame:
         self.canvas = tk.Canvas(self.frame, highlightthickness=0, **kwargs)
         self.canvas.pack(fill="both", expand=True)
         
-    def create_rounded_rect(self, width, height, radius, fill):
-        """Create a rounded rectangle"""
-        image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(image)
+    def create_rounded_rect(self, x1, y1, x2, y2, radius, **kwargs):
+        """Create rounded rectangle using tkinter polygon (no PIL)"""
+        points = [x1+radius, y1,
+                  x1+radius, y1,
+                  x2-radius, y1,
+                  x2-radius, y1,
+                  x2, y1,
+                  x2, y1+radius,
+                  x2, y1+radius,
+                  x2, y2-radius,
+                  x2, y2-radius,
+                  x2, y2,
+                  x2-radius, y2,
+                  x2-radius, y2,
+                  x1+radius, y2,
+                  x1+radius, y2,
+                  x1, y2,
+                  x1, y2-radius,
+                  x1, y2-radius,
+                  x1, y1+radius,
+                  x1, y1+radius,
+                  x1, y1]
         
-        # Draw rounded rectangle
-        draw.rounded_rectangle([(0, 0), (width-1, height-1)], radius, fill=fill)
-        
-        return ImageTk.PhotoImage(image)
+        return self.canvas.create_polygon(points, **kwargs, smooth=True)
     
     def configure(self, width=None, height=None, bg=None):
         if bg:
@@ -25,9 +38,8 @@ class RoundedFrame:
             self.canvas.config(bg=bg)
         
         if width and height:
-            img = self.create_rounded_rect(width, height, self.radius, bg)
-            self.canvas.create_image(0, 0, image=img, anchor="nw")
-            self.canvas.image = img
+            self.canvas.delete("all")
+            self.create_rounded_rect(0, 0, width, height, self.radius, fill=bg, outline="")
     
     def pack(self, **kwargs):
         return self.frame.pack(**kwargs)
