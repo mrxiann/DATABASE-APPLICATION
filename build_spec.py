@@ -11,7 +11,7 @@ main_script = os.path.join(current_dir, "main.py")
 # PyInstaller options
 options = [
     main_script,                    # Main script
-    '--name=SK_Youth_Portal',       # Name of the executable
+    '--name=SK_Youth_Management_and_Information_System',       # Name of the executable
     '--onefile',                    # Create a single executable file
     '--windowed',                   # Don't show console window
     '--icon=icon.ico',              # Icon file (optional)

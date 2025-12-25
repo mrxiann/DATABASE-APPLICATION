@@ -177,7 +177,7 @@ class LoginWindow:
         # Welcome text
         decor_canvas.create_text(200, 200, text="Welcome to", 
                                 font=("Segoe UI", 16), fill='white', anchor='center')
-        decor_canvas.create_text(200, 240, text="SK Youth Portal", 
+        decor_canvas.create_text(200, 240, text="SK Youth Management and Information System", 
                                 font=("Segoe UI", 28, 'bold'), fill='white', anchor='center')
         decor_canvas.create_text(200, 280, text="Empowering Youth, Building Futures", 
                                 font=("Segoe UI", 12), fill='#e0e7ff', anchor='center')
@@ -283,7 +283,7 @@ class LoginWindow:
         footer_frame = tk.Frame(right_panel, bg='white')
         footer_frame.pack(side='bottom', fill='x', pady=(20, 0))
         
-        tk.Label(footer_frame, text="© 2024 SK Youth Portal. All rights reserved.", 
+        tk.Label(footer_frame, text="© 2025 SK Youth Management and Information System. All rights reserved.", 
                 bg='white', font=('Segoe UI', 10), fg='#94a3b8').pack()
         
         self.app.root.bind('<Return>', lambda e: self.do_login())
