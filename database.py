@@ -156,13 +156,13 @@ def setup_database():
         )
         admin_id = cursor.lastrowid
         
-        # Add sample youth users
+        # Add sample youth users - ALL WITH SAME PASSWORD 'youth123'
+        youth_password_hash = hashlib.sha256('youth123'.encode()).hexdigest()
         for i in range(1, 6):
             email = f'youth{i}@example.com'
-            hashed = hashlib.sha256(f'youth{i}23'.encode()).hexdigest()
             cursor.execute(
                 "INSERT INTO users (name, email, password, role, barangay, youth_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                (f'Youth User {i}', email, hashed, 'youth', f'Purok {i}', f'SK-YOUTH-{i:03d}')
+                (f'Youth User {i}', email, youth_password_hash, 'youth', f'Purok {i}', f'SK-YOUTH-{i:03d}')
             )
         
         # Add sample events
