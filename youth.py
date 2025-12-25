@@ -34,7 +34,7 @@ class YouthDashboard:
         sidebar.pack(side='left', fill='y')
         
         # Logo
-        tk.Label(sidebar, text="SK Youth Portal", bg='#4f46e5', fg='white',
+        tk.Label(sidebar, text="SK Youth Management and Information System", bg='#4f46e5', fg='white',
                 font=('Helvetica', 18, 'bold')).pack(pady=30)
         
         # Menu items
