@@ -339,36 +339,37 @@ class LoginWindow:
                                         widget.itemconfig(inner, fill='white')
                                         widget.itemconfig(indicator, outline='#cbd5e1')
     
-    def do_login(self):
-        email = self.email.get()
-        pwd = self.password.get()
-        role = self.role.get()
-        
-        if not email or not pwd:
-            messagebox.showerror("Error", "Please fill all fields")
-            return
-        
-        if not self.app.db:
-            messagebox.showerror("Error", "Database not connected")
-            return
-        
-        hashed = hashlib.sha256(pwd.encode()).hexdigest()
-        
-        cursor = self.app.db.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT * FROM users WHERE email = %s AND password = %s AND role = %s",
-            (email, hashed, role)
-        )
-        user = cursor.fetchone()
-        cursor.close()
-        
-        if user:
-            if role == 'admin':
-                self.app.show_admin_dashboard(user)
+        def do_login(self):
+            email = self.email.get()
+            pwd = self.password.get()
+            role = self.role.get()
+            
+            if not email or not pwd:
+                messagebox.showerror("Error", "Please fill all fields")
+                return
+            
+            if not self.app.db:
+                messagebox.showerror("Error", "Database not connected")
+                return
+            
+            hashed = hashlib.sha256(pwd.encode()).hexdigest()
+            
+            cursor = self.app.db.cursor(dictionary=True)
+            
+            cursor.execute(
+                "SELECT * FROM users WHERE email = %s AND password = %s AND role = %s AND status = 'active'",
+                (email, hashed, role)
+            )
+            user = cursor.fetchone()
+            cursor.close()
+            
+            if user:
+                if role == 'admin':
+                    self.app.show_admin_dashboard(user)
+                else:
+                    self.app.show_youth_dashboard(user)
             else:
-                self.app.show_youth_dashboard(user)
-        else:
-            messagebox.showerror("Error", "Invalid login credentials")
+                messagebox.showerror("Error", "Invalid login credentials or account not active")
     
     def register(self):
         win = tk.Toplevel(self.app.root)
