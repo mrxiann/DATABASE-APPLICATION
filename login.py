@@ -261,10 +261,10 @@ class LoginWindow:
         admin_rb.pack(side='left')
         
         # Test button to see current role
-        test_btn = tk.Button(role_frame, text="Test Role", 
-                            command=lambda: print(f"DEBUG: Current role: {self.role.get()}"),
-                            font=('Segoe UI', 10), bg='#f1f5f9')
-        test_btn.pack(side='left', padx=20)
+        # test_btn = tk.Button(role_frame, text="Test Role", 
+        #                    command=lambda: print(f"DEBUG: Current role: {self.role.get()}"),
+        #                    font=('Segoe UI', 10), bg='#f1f5f9')
+        # test_btn.pack(side='left', padx=20)
         
         # Login button
         self.login_btn = ModernButton(form_frame, text="Sign In", 

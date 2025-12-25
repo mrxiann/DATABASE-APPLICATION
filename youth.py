@@ -1,4 +1,3 @@
-# youth.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 import qrcode
@@ -136,6 +135,13 @@ class YouthDashboard:
         tk.Label(left, text="Quick Links", bg='white',
                 font=('Helvetica', 16, 'bold'), fg='#1e293b').pack(pady=20, padx=20, anchor='w')
         
+        # Define lighter colors for button backgrounds
+        link_colors = {
+            "#3b82f6": "#dbeafe",  # blue
+            "#10b981": "#d1fae5",  # green
+            "#ef4444": "#fee2e2"   # red
+        }
+        
         links = [
             ("📅 Register for Events", "#3b82f6", self.show_events),
             ("👤 Update Profile", "#10b981", self.show_profile),
@@ -143,8 +149,9 @@ class YouthDashboard:
         ]
         
         for text, color, command in links:
+            btn_bg = link_colors.get(color, "#f3f4f6")  # Use lighter color for background
             btn = tk.Button(left, text=text, anchor='w',
-                          bg='#e0f2fe', fg=color, font=('Helvetica', 12),
+                          bg=btn_bg, fg=color, font=('Helvetica', 12),
                           border=0, cursor='hand2', width=20, height=2,
                           command=command)
             btn.pack(pady=5, padx=20, anchor='w')
@@ -680,6 +687,14 @@ class YouthDashboard:
         stats_grid = tk.Frame(stats_frame, bg='#f8fafc')
         stats_grid.pack(pady=10, padx=20)
         
+        # Define lighter colors for stat card backgrounds
+        stat_bg_colors = {
+            "#3b82f6": "#dbeafe",  # blue
+            "#10b981": "#d1fae5",  # green  
+            "#f59e0b": "#fef3c7",  # yellow
+            "#ec4899": "#fce7f3"   # pink
+        }
+        
         for i, (title, value, color) in enumerate(stats_data):
             row, col = divmod(i, 2)
             
@@ -691,12 +706,13 @@ class YouthDashboard:
             stat_card = tk.Frame(stats_grid, bg='white', relief='ridge', borderwidth=1)
             stat_card.grid(row=row, column=col, padx=5, pady=5, sticky='nsew')
             
-            inner = tk.Frame(stat_card, bg=color + '20', padx=15, pady=15)
+            bg_color = stat_bg_colors.get(color, "#f3f4f6")
+            inner = tk.Frame(stat_card, bg=bg_color, padx=15, pady=15)
             inner.pack(fill='both', expand=True)
             
-            tk.Label(inner, text=str(value), bg=color + '20', fg=color,
+            tk.Label(inner, text=str(value), bg=bg_color, fg=color,
                     font=('Helvetica', 20, 'bold')).pack()
-            tk.Label(inner, text=title, bg=color + '20', fg='#64748b',
+            tk.Label(inner, text=title, bg=bg_color, fg='#64748b',
                     font=('Helvetica', 10)).pack()
         
         # Awards section
