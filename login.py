@@ -167,20 +167,45 @@ class LoginWindow:
         decor_canvas = tk.Canvas(left_panel, bg='#4f46e5', highlightthickness=0)
         decor_canvas.pack(fill='both', expand=True, padx=40, pady=60)
         
-        # Decorative circles - using solid colors instead of RGBA
+        # Get canvas dimensions
+        canvas_width = 320  # 400 - 80 (40px padding on each side)
+        canvas_height = decor_canvas.winfo_reqheight()
+        
+        # Calculate center positions
+        center_x = canvas_width // 2  # 160 (in canvas coordinates)
+        center_y = canvas_height // 2
+        
+        # Decorative circles
         colors = ['#e0e7ff', '#c7d2fe', '#a5b4fc']  # Light indigo shades
-        positions = [(50, 50, 80), (300, 150, 120), (100, 300, 60)]
+        
+        # Position circles relative to center
+        positions = [
+            (center_x - 80, center_y - 80, 60),   # Top-left of center
+            (center_x + 60, center_y - 40, 80),   # Top-right of center
+            (center_x - 20, center_y + 60, 40)    # Bottom of center
+        ]
         
         for (x, y, r), color in zip(positions, colors):
             decor_canvas.create_oval(x, y, x+r, y+r, fill=color, outline='')
         
-        # Welcome text
-        decor_canvas.create_text(200, 200, text="Welcome to", 
-                                font=("Segoe UI", 16), fill='white', anchor='center')
-        decor_canvas.create_text(200, 240, text="SK Youth Management and Information System", 
-                                font=("Segoe UI", 28, 'bold'), fill='white', anchor='center')
-        decor_canvas.create_text(200, 280, text="Empowering Youth, Building Futures", 
-                                font=("Segoe UI", 12), fill='#e0e7ff', anchor='center')
+        # Welcome text - perfectly centered
+        # Start from center and work outwards
+        text_start_y = center_y - 100  # Start above center
+        
+        decor_canvas.create_text(center_x, text_start_y, text="Welcome to", 
+                                font=("Segoe UI", 18), fill='white', anchor='center')
+        
+        decor_canvas.create_text(center_x, text_start_y + 40, text="SK Youth", 
+                                font=("Segoe UI", 26, 'bold'), fill='white', anchor='center')
+        
+        decor_canvas.create_text(center_x, text_start_y + 80, text="Management and", 
+                                font=("Segoe UI", 22, 'bold'), fill='white', anchor='center')
+        
+        decor_canvas.create_text(center_x, text_start_y + 120, text="Information System", 
+                                font=("Segoe UI", 22, 'bold'), fill='white', anchor='center')
+        
+        decor_canvas.create_text(center_x, text_start_y + 170, text="Empowering Youth, Building Futures", 
+                                font=("Segoe UI", 14), fill='#e0e7ff', anchor='center')
         
         # Right panel - Login form
         right_panel = tk.Frame(container, bg='white')
