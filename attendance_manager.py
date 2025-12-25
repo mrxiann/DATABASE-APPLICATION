@@ -27,7 +27,7 @@ class AttendanceManagement:
         sidebar = tk.Frame(self.main, bg='white', width=250)
         sidebar.pack(side='left', fill='y')
         
-        tk.Label(sidebar, text="SK Youth Management and Information System", bg='white',
+        tk.Label(sidebar, text="SK System", bg='white',
                 font=('Helvetica', 18, 'bold'), fg='#6366f1').pack(pady=30)
         
         tk.Button(sidebar, text="← Back to Dashboard", 

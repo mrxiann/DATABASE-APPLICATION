@@ -31,7 +31,7 @@ class AdminDashboard:
         header.pack(fill='x')
         header.pack_propagate(False)
         
-        tk.Label(header, text="SK Youth Management and Information System", bg='#4f46e5', fg='white',
+        tk.Label(header, text="SK System", bg='#4f46e5', fg='white',
                 font=('Segoe UI', 20, 'bold')).pack(expand=True, pady=(20, 5))
         
         user = self.app.user
