@@ -144,7 +144,7 @@ class YouthDashboard:
         
         for text, color, command in links:
             btn = tk.Button(left, text=text, anchor='w',
-                          bg=f'{color}15', fg=color, font=('Helvetica', 12),
+                          bg='#e0f2fe', fg=color, font=('Helvetica', 12),
                           border=0, cursor='hand2', width=20, height=2,
                           command=command)
             btn.pack(pady=5, padx=20, anchor='w')
