@@ -213,13 +213,6 @@ class AdminDashboard:
             FROM events 
             ORDER BY created_at DESC 
             LIMIT 5
-            UNION
-            SELECT 'user' as type, CONCAT(name, ' registered') as description, created_at 
-            FROM users 
-            ORDER BY created_at DESC 
-            LIMIT 5
-            ORDER BY created_at DESC 
-            LIMIT 5
         """)
         activities = cursor.fetchall()
         cursor.close()
