@@ -225,7 +225,7 @@ class FeedbackManagement:
                 font=('Segoe UI', 28, 'bold'), fg='#1e293b').pack(side='left')
         
         # Search and filter
-        filter_frame = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=(0, 20))
+        filter_frame = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=10)
         filter_frame.pack(fill='x')
         
         # Search
@@ -272,7 +272,7 @@ class FeedbackManagement:
         
         # Feedback cards container
         feedback_container = ModernCard(self.content, padx=0, pady=0)
-        feedback_container.pack(fill='both', expand=True, padx=30, pady=(0, 30))
+        feedback_container.pack(fill='both', expand=True, padx=30, pady=10)
         
         # Create scrollable canvas
         canvas_frame = tk.Frame(feedback_container, bg='white')
