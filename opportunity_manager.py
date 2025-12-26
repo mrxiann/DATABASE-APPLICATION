@@ -22,7 +22,7 @@ class OpportunityManagement:
         sidebar = tk.Frame(self.main, bg='#8b5cf6', width=250)
         sidebar.pack(side='left', fill='y')
         
-        tk.Label(sidebar, text="SK Portal", bg='#8b5cf6', fg='white',
+        tk.Label(sidebar, text="SK System", bg='#8b5cf6', fg='white',
                 font=('Helvetica', 18, 'bold')).pack(pady=30)
         
         tk.Button(sidebar, text="← Back to Dashboard", 
@@ -573,14 +573,14 @@ class OpportunityManagement:
         stats_frame.pack(pady=20)
         
         stat_cards = [
-            ("Total Opportunities", stats['total_opportunities'], "#8b5cf6"),
-            ("Open", stats['open_opportunities'], "#10b981"),
-            ("Closed", stats['closed_opportunities'], "#ef4444"),
-            ("Filled", stats['filled_opportunities'], "#f59e0b"),
-            ("Total Applications", stats['total_applications'], "#ec4899")
+            ("Total Opportunities", stats['total_opportunities'], "#8b5cf6", "#ede9fe"),
+            ("Open", stats['open_opportunities'], "#10b981", "#d1fae5"),
+            ("Closed", stats['closed_opportunities'], "#ef4444", "#fee2e2"),
+            ("Filled", stats['filled_opportunities'], "#f59e0b", "#fef3c7"),
+            ("Total Applications", stats['total_applications'], "#ec4899", "#fce7f3")
         ]
         
-        for i, (title, value, color) in enumerate(stat_cards):
+        for i, (title, value, color, light_color) in enumerate(stat_cards):
             row, col = divmod(i, 3)
             
             if col == 0:
@@ -593,10 +593,11 @@ class OpportunityManagement:
             card = tk.Frame(stats_frame, bg='white', relief='ridge', borderwidth=1)
             card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
             
-            inner = tk.Frame(card, bg=color + '20', padx=20, pady=20)
+            # FIXED: Use light_color directly instead of trying to modify hex
+            inner = tk.Frame(card, bg=light_color, padx=20, pady=20)
             inner.pack(fill='both', expand=True)
             
-            tk.Label(inner, text=str(value), bg=color + '20', fg=color,
+            tk.Label(inner, text=str(value), bg=light_color, fg=color,
                     font=('Helvetica', 28, 'bold')).pack()
-            tk.Label(inner, text=title, bg=color + '20', fg='#64748b',
+            tk.Label(inner, text=title, bg=light_color, fg='#64748b',
                     font=('Helvetica', 12)).pack()

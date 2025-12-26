@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 class SKYouthPortal:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("SK Youth Portal")
+        self.root.title("SK Youth Management and Information System")
         self.root.geometry("1400x800")
         self.root.configure(bg='#f8fafc')
         

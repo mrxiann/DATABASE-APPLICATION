@@ -5,3 +5,5 @@ pip install -r requirements.txt
 
 # 2. Set up database
 python database.py
+
+pip install qrcode pillow

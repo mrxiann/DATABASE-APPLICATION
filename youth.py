@@ -33,7 +33,7 @@ class YouthDashboard:
         sidebar.pack(side='left', fill='y')
         
         # Logo
-        tk.Label(sidebar, text="SK Youth Portal", bg='#4f46e5', fg='white',
+        tk.Label(sidebar, text="SK System", bg='#4f46e5', fg='white',
                 font=('Helvetica', 18, 'bold')).pack(pady=30)
         
         # Menu items
@@ -135,6 +135,13 @@ class YouthDashboard:
         tk.Label(left, text="Quick Links", bg='white',
                 font=('Helvetica', 16, 'bold'), fg='#1e293b').pack(pady=20, padx=20, anchor='w')
         
+        # Define lighter colors for button backgrounds
+        link_colors = {
+            "#3b82f6": "#dbeafe",  # blue
+            "#10b981": "#d1fae5",  # green
+            "#ef4444": "#fee2e2"   # red
+        }
+        
         links = [
             ("📅 Register for Events", "#3b82f6", self.show_events),
             ("👤 Update Profile", "#10b981", self.show_profile),
@@ -142,8 +149,9 @@ class YouthDashboard:
         ]
         
         for text, color, command in links:
+            btn_bg = link_colors.get(color, "#f3f4f6")  # Use lighter color for background
             btn = tk.Button(left, text=text, anchor='w',
-                          bg=f'{color}15', fg=color, font=('Helvetica', 12),
+                          bg=btn_bg, fg=color, font=('Helvetica', 12),
                           border=0, cursor='hand2', width=20, height=2,
                           command=command)
             btn.pack(pady=5, padx=20, anchor='w')
@@ -371,10 +379,12 @@ class YouthDashboard:
         is_registered = cursor.fetchone()[0] > 0
         cursor.close()
         
-        # Register button
+        # Register button with improved colors
         btn_text = "✅ Already Registered" if is_registered else "Register Now"
         btn_state = 'disabled' if is_registered else 'normal'
-        btn_bg = '#6b7280' if is_registered else '#4f46e5'
+        # Modern colors: Purple for active, muted gray for disabled with clear text
+        btn_bg = '#9ca3af' if is_registered else '#7c3aed'  # Lighter gray for disabled, vibrant purple for active
+        btn_fg = '#f9fafb' if is_registered else 'white'  # Light gray text on disabled, white on active
         
         def register_event():
             try:
@@ -396,9 +406,12 @@ class YouthDashboard:
                 if 'cursor' in locals():
                     cursor.close()
         
-        tk.Button(inner, text=btn_text, bg=btn_bg, fg='white',
-                 font=('Helvetica', 11), cursor='hand2' if not is_registered else 'arrow',
-                 state=btn_state, command=register_event).pack(anchor='e')
+        tk.Button(inner, text=btn_text, bg=btn_bg, fg=btn_fg,
+                 font=('Helvetica', 11, 'bold' if not is_registered else 'normal'),
+                 cursor='hand2' if not is_registered else 'arrow',
+                 state=btn_state, command=register_event,
+                 activebackground='#6d28d9' if not is_registered else btn_bg,
+                 activeforeground='white' if not is_registered else btn_fg).pack(anchor='e')
     
     def show_opportunities(self):
         # Clear content
@@ -554,10 +567,12 @@ class YouthDashboard:
         already_applied = cursor.fetchone()[0] > 0
         cursor.close()
         
-        # Apply button
+        # Apply button with improved colors
         btn_text = "✅ Already Applied" if already_applied else "Apply Now"
         btn_state = 'disabled' if already_applied else 'normal'
-        btn_bg = '#6b7280' if already_applied else '#4f46e5'
+        # Modern gradient-inspired colors: Teal for active, soft gray for disabled
+        btn_bg = '#9ca3af' if already_applied else '#0d9488'  # Teal for active, light gray for disabled
+        btn_fg = '#f9fafb' if already_applied else 'white'   # Light gray text on disabled, white on active
         
         def apply_opportunity():
             try:
@@ -579,9 +594,12 @@ class YouthDashboard:
                 if 'cursor' in locals():
                     cursor.close()
         
-        tk.Button(inner, text=btn_text, bg=btn_bg, fg='white',
-                 font=('Helvetica', 11), cursor='hand2' if not already_applied else 'arrow',
-                 state=btn_state, command=apply_opportunity).pack(anchor='e', pady=(10, 0))
+        tk.Button(inner, text=btn_text, bg=btn_bg, fg=btn_fg,
+                 font=('Helvetica', 11, 'bold' if not already_applied else 'normal'),
+                 cursor='hand2' if not already_applied else 'arrow',
+                 state=btn_state, command=apply_opportunity,
+                 activebackground='#0f766e' if not already_applied else btn_bg,
+                 activeforeground='white' if not already_applied else btn_fg).pack(anchor='e', pady=(10, 0))
     
     def show_profile(self):
         # Clear content
@@ -597,8 +615,10 @@ class YouthDashboard:
         
         # Edit button
         tk.Button(header, text="✏️ Edit Profile", command=self.edit_profile,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 11),
-                 cursor='hand2', padx=15).pack(side='right')
+                 bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
+                 cursor='hand2', padx=15, pady=5,
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(side='right')
         
         # Profile form
         form_frame = tk.Frame(self.content, bg='white', padx=30)
@@ -679,6 +699,14 @@ class YouthDashboard:
         stats_grid = tk.Frame(stats_frame, bg='#f8fafc')
         stats_grid.pack(pady=10, padx=20)
         
+        # Define lighter colors for stat card backgrounds
+        stat_bg_colors = {
+            "#3b82f6": "#dbeafe",  # blue
+            "#10b981": "#d1fae5",  # green  
+            "#f59e0b": "#fef3c7",  # yellow
+            "#ec4899": "#fce7f3"   # pink
+        }
+        
         for i, (title, value, color) in enumerate(stats_data):
             row, col = divmod(i, 2)
             
@@ -690,12 +718,13 @@ class YouthDashboard:
             stat_card = tk.Frame(stats_grid, bg='white', relief='ridge', borderwidth=1)
             stat_card.grid(row=row, column=col, padx=5, pady=5, sticky='nsew')
             
-            inner = tk.Frame(stat_card, bg=color + '20', padx=15, pady=15)
+            bg_color = stat_bg_colors.get(color, "#f3f4f6")
+            inner = tk.Frame(stat_card, bg=bg_color, padx=15, pady=15)
             inner.pack(fill='both', expand=True)
             
-            tk.Label(inner, text=str(value), bg=color + '20', fg=color,
+            tk.Label(inner, text=str(value), bg=bg_color, fg=color,
                     font=('Helvetica', 20, 'bold')).pack()
-            tk.Label(inner, text=title, bg=color + '20', fg='#64748b',
+            tk.Label(inner, text=title, bg=bg_color, fg='#64748b',
                     font=('Helvetica', 10)).pack()
         
         # Awards section
@@ -863,11 +892,15 @@ class YouthDashboard:
         
         tk.Button(btn_frame, text="Save Changes", command=save_profile,
                  bg='#10b981', fg='white', font=('Helvetica', 11, 'bold'),
-                 width=20, pady=10, cursor='hand2').pack(side='left', padx=5)
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#0d9c6f',
+                 activeforeground='white').pack(side='left', padx=5)
         
         tk.Button(btn_frame, text="Cancel", command=win.destroy,
                  bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=10, pady=10, cursor='hand2').pack(side='left', padx=5)
+                 width=10, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(side='left', padx=5)
     
     def show_feedback(self):
         # Clear content
@@ -884,8 +917,10 @@ class YouthDashboard:
         # Create feedback button
         tk.Button(header, text="➕ Submit New Feedback", 
                  command=self.submit_feedback,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 11),
-                 cursor='hand2', padx=15).pack(side='right')
+                 bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
+                 cursor='hand2', padx=15, pady=5,
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(side='right')
         
         # Feedback history in scrollable container
         container = tk.Frame(self.content, bg='#f8fafc', padx=30)
@@ -983,8 +1018,10 @@ class YouthDashboard:
             self.view_feedback_details(feedback)
         
         tk.Button(inner, text="View Details", command=view_feedback,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 10),
-                 padx=15, pady=5, cursor='hand2').pack(anchor='e', pady=(5, 0))
+                 bg='#4f46e5', fg='white', font=('Helvetica', 10, 'bold'),
+                 padx=15, pady=5, cursor='hand2',
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(anchor='e', pady=(5, 0))
     
     def view_feedback_details(self, feedback):
         win = tk.Toplevel(self.root)
@@ -1068,8 +1105,10 @@ class YouthDashboard:
             reply_text.pack(fill='x', padx=5, pady=5)
         
         tk.Button(win, text="Close", command=win.destroy,
-                 bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=20, pady=10, cursor='hand2').pack(pady=20)
+                 bg='#6b7280', fg='white', font=('Helvetica', 11, 'bold'),
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(pady=20)
     
     def submit_feedback(self):
         win = tk.Toplevel(self.root)
@@ -1136,8 +1175,12 @@ class YouthDashboard:
         
         tk.Button(win, text="Submit Feedback", command=submit,
                  bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
-                 width=20, pady=10, cursor='hand2').pack(pady=20)
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(pady=20)
         
         tk.Button(win, text="Cancel", command=win.destroy,
                  bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=10, pady=10, cursor='hand2').pack(pady=(0, 20))
+                 width=10, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(pady=(0, 20))
