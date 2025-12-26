@@ -80,7 +80,7 @@ class EventManagement:
     def show_events(self):
         # Unbind mousewheel to prevent errors when switching views
         if hasattr(self, '_mousewheel_bind_id'):
-            self.root.unbind_all("<MouseWheel>")
+            self.app.root.unbind_all("<MouseWheel>")
         
         for widget in self.content.winfo_children():
             widget.destroy()
@@ -162,10 +162,10 @@ class EventManagement:
                 self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
             except tk.TclError:
                 # Canvas was destroyed, unbind the event
-                self.root.unbind_all("<MouseWheel>")
+                self.app.root.unbind_all("<MouseWheel>")
         
         # Store bind id for cleanup
-        self._mousewheel_bind_id = self.root.bind_all("<MouseWheel>", _on_mousewheel)
+        self._mousewheel_bind_id = self.app.root.bind_all("<MouseWheel>", _on_mousewheel)
     
     def load_all_events(self):
         cursor = self.app.db.cursor(dictionary=True)
@@ -744,7 +744,7 @@ class EventManagement:
     def show_reports(self):
         # Clean up mousewheel binding
         if hasattr(self, '_mousewheel_bind_id'):
-            self.root.unbind_all("<MouseWheel>")
+            self.app.root.unbind_all("<MouseWheel>")
         
         for widget in self.content.winfo_children():
             widget.destroy()
@@ -776,18 +776,18 @@ class EventManagement:
         stats_container.pack(fill='x')
         
         stat_cards = [
-            ("Total Events", stats['total_events'], "#3b82f6", "📊"),
-            ("Completed", stats['completed_events'], "#10b981", "✅"),
-            ("Upcoming", stats['upcoming_events'], "#f59e0b", "📅"),
-            ("Ongoing", stats['ongoing_events'], "#8b5cf6", "🔄"),
-            ("Total Participants", stats['total_participants'], "#ec4899", "👥")
+            ("Total Events", stats['total_events'], "#3b82f6", "#e0e7ff", "📊"),
+            ("Completed", stats['completed_events'], "#10b981", "#d1fae5", "✅"),
+            ("Upcoming", stats['upcoming_events'], "#f59e0b", "#fef3c7", "📅"),
+            ("Ongoing", stats['ongoing_events'], "#8b5cf6", "#ede9fe", "🔄"),
+            ("Total Participants", stats['total_participants'] or 0, "#ec4899", "#fce7f3", "👥")
         ]
         
         # Create cards in a grid
         cards_frame = tk.Frame(stats_container, bg='#f8fafc')
         cards_frame.pack()
         
-        for i, (title, value, color, icon) in enumerate(stat_cards):
+        for i, (title, value, color, light_color, icon) in enumerate(stat_cards):
             row, col = divmod(i, 3)
             
             if col == 0:
@@ -797,5 +797,14 @@ class EventManagement:
             if col == 2:
                 cards_frame.columnconfigure(2, weight=1)
             
-            card = create_stat_card(cards_frame, title, value, color, icon)
+            card = tk.Frame(cards_frame, bg='white', relief='ridge', borderwidth=1)
             card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
+            
+            # FIXED: Use light_color directly
+            inner = tk.Frame(card, bg=light_color, padx=20, pady=20)
+            inner.pack(fill='both', expand=True)
+            
+            tk.Label(inner, text=str(value), bg=light_color, fg=color,
+                    font=('Segoe UI', 28, 'bold')).pack()
+            tk.Label(inner, text=title, bg=light_color, fg='#64748b',
+                    font=('Segoe UI', 12)).pack()
