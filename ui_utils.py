@@ -34,9 +34,10 @@ class ModernButton(tk.Canvas):
     def draw_button(self, color):
         self.delete("all")
         
-        # Draw subtle shadow
+        # Draw subtle shadow - using a light gray instead of semi-transparent black
+        shadow_color = '#e5e7eb'  # Light gray for shadow
         self.create_rounded_rect(2, 2, self.winfo_reqwidth()-1, self.winfo_reqheight()-1, 
-                                self.radius, fill='#00000010', outline='')
+                                self.radius, fill=shadow_color, outline='')
         
         # Draw main button
         self.create_rounded_rect(0, 0, self.winfo_reqwidth()-3, self.winfo_reqheight()-3, 
