@@ -19,6 +19,10 @@ class EventManagement:
         self.content = tk.Frame(self.main, bg='#f8fafc')
         self.content.pack(side='right', fill='both', expand=True)
         
+        # Store canvas reference for cleanup
+        self.canvas = None
+        self.scrollable_frame = None
+        
         self.show_events()
     
     def create_sidebar(self):
@@ -74,6 +78,10 @@ class EventManagement:
                             b.config(bg='white' if not active else '#f0fdf4'))
     
     def show_events(self):
+        # Unbind mousewheel to prevent errors when switching views
+        if hasattr(self, '_mousewheel_bind_id'):
+            self.root.unbind_all("<MouseWheel>")
+        
         for widget in self.content.winfo_children():
             widget.destroy()
         
@@ -148,11 +156,16 @@ class EventManagement:
         self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Add mousewheel scrolling
+        # Add mousewheel scrolling with proper cleanup
         def _on_mousewheel(event):
-            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            try:
+                self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            except tk.TclError:
+                # Canvas was destroyed, unbind the event
+                self.root.unbind_all("<MouseWheel>")
         
-        self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Store bind id for cleanup
+        self._mousewheel_bind_id = self.root.bind_all("<MouseWheel>", _on_mousewheel)
     
     def load_all_events(self):
         cursor = self.app.db.cursor(dictionary=True)
@@ -170,8 +183,9 @@ class EventManagement:
     
     def filter_events(self):
         # Clear existing cards
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
+        if self.scrollable_frame:
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
         
         search_text = self.search_entry.get().lower()
         status_filter = self.status_filter.get().lower()
@@ -190,25 +204,30 @@ class EventManagement:
                 filtered_events.append(event)
         
         if not filtered_events:
-            no_events_frame = tk.Frame(self.scrollable_frame, bg='white', height=200)
-            no_events_frame.pack(fill='both', expand=True)
-            
-            tk.Label(no_events_frame, text="No events found", bg='white',
-                    font=('Segoe UI', 14), fg='#94a3b8').pack(expand=True)
-            
-            if search_text:
-                tk.Label(no_events_frame, text="Try adjusting your search terms", bg='white',
-                        font=('Segoe UI', 11), fg='#cbd5e1').pack(pady=10)
+            if self.scrollable_frame:
+                no_events_frame = tk.Frame(self.scrollable_frame, bg='white', height=200)
+                no_events_frame.pack(fill='both', expand=True)
+                
+                tk.Label(no_events_frame, text="No events found", bg='white',
+                        font=('Segoe UI', 14), fg='#94a3b8').pack(expand=True)
+                
+                if search_text:
+                    tk.Label(no_events_frame, text="Try adjusting your search terms", bg='white',
+                            font=('Segoe UI', 11), fg='#cbd5e1').pack(pady=10)
         else:
             for event in filtered_events:
                 self.create_modern_event_card(event)
         
         # Update canvas scroll region
-        self.scrollable_frame.update_idletasks()
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        if self.canvas and self.scrollable_frame:
+            self.scrollable_frame.update_idletasks()
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
     
     def create_modern_event_card(self, event):
         """Create a modern event card"""
+        if not self.scrollable_frame:
+            return
+            
         # Status colors
         status_colors = {
             'upcoming': ('#3b82f6', '#dbeafe'),
@@ -723,6 +742,10 @@ class EventManagement:
                     font=('Segoe UI', 11), fg='#94a3b8').pack(pady=10)
     
     def show_reports(self):
+        # Clean up mousewheel binding
+        if hasattr(self, '_mousewheel_bind_id'):
+            self.root.unbind_all("<MouseWheel>")
+        
         for widget in self.content.winfo_children():
             widget.destroy()
         
