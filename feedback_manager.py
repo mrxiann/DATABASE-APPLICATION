@@ -97,18 +97,45 @@ class FeedbackManagement:
             feedback_list = cursor.fetchall()
             cursor.close()
             
+            # Debug: Check if we got data
+            print(f"DEBUG: Fetched {len(feedback_list)} feedback entries")
+            if feedback_list:
+                print(f"DEBUG: First feedback: {feedback_list[0]}")
+            
             # Convert date strings to datetime objects
             for feedback in feedback_list:
-                feedback['created_at'] = datetime.strptime(
-                    str(feedback['created_at']), '%Y-%m-%d %H:%M:%S'
-                )
-                if feedback['updated_at']:
-                    feedback['updated_at'] = datetime.strptime(
-                        str(feedback['updated_at']), '%Y-%m-%d %H:%M:%S'
+                try:
+                    feedback['created_at'] = datetime.strptime(
+                        str(feedback['created_at']), '%Y-%m-%d %H:%M:%S'
                     )
+                except Exception as e:
+                    print(f"DEBUG: Error parsing created_at: {e}")
+                    feedback['created_at'] = datetime.now()
+                
+                if feedback['updated_at']:
+                    try:
+                        feedback['updated_at'] = datetime.strptime(
+                            str(feedback['updated_at']), '%Y-%m-%d %H:%M:%S'
+                        )
+                    except:
+                        feedback['updated_at'] = None
             
             self.all_feedback = feedback_list
             self.current_feedback = feedback_list.copy()
+            
+            if not feedback_list:
+                # Show "no feedback" message
+                no_feedback_frame = tk.Frame(self.scrollable_frame, bg='white')
+                no_feedback_frame.pack(fill='both', expand=True, pady=50)
+                
+                tk.Label(no_feedback_frame, text="📭", bg='white',
+                        font=('Segoe UI', 48), fg='#cbd5e1').pack(pady=(0, 20))
+                
+                tk.Label(no_feedback_frame, text="No Feedback Found", bg='white',
+                        font=('Segoe UI', 18, 'bold'), fg='#64748b').pack(pady=(0, 10))
+                
+                tk.Label(no_feedback_frame, text="There are no feedback submissions yet.", 
+                        bg='white', font=('Segoe UI', 12), fg='#94a3b7').pack()
             
             # Create cards for each feedback
             for feedback in feedback_list:
@@ -119,6 +146,7 @@ class FeedbackManagement:
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
             
         except Exception as e:
+            print(f"DEBUG: Error in load_all_feedback: {str(e)}")
             messagebox.showerror("Error", f"Failed to load feedback: {str(e)}")
     
     def filter_feedback(self):
@@ -137,11 +165,11 @@ class FeedbackManagement:
             filtered_feedback = []
             for feedback in self.all_feedback:
                 # Search filter
-                if search_term:
+                if search_term and search_term != "search feedback...":
                     search_match = (
-                        search_term in feedback['subject'].lower() or
-                        search_term in feedback['message'].lower() or
-                        search_term in feedback['user_name'].lower() or
+                        (feedback['subject'] and search_term in feedback['subject'].lower()) or
+                        (feedback['message'] and search_term in feedback['message'].lower()) or
+                        (feedback['user_name'] and search_term in feedback['user_name'].lower()) or
                         (feedback['youth_id'] and search_term in feedback['youth_id'].lower())
                     )
                     if not search_match:
@@ -159,15 +187,30 @@ class FeedbackManagement:
             
             self.current_feedback = filtered_feedback
             
-            # Create cards for filtered feedback
-            for feedback in filtered_feedback:
-                self.create_modern_feedback_card(feedback)
+            if not filtered_feedback:
+                # Show "no results" message
+                no_results_frame = tk.Frame(self.scrollable_frame, bg='white')
+                no_results_frame.pack(fill='both', expand=True, pady=50)
+                
+                tk.Label(no_results_frame, text="🔍", bg='white',
+                        font=('Segoe UI', 48), fg='#cbd5e1').pack(pady=(0, 20))
+                
+                tk.Label(no_results_frame, text="No Matching Feedback", bg='white',
+                        font=('Segoe UI', 18, 'bold'), fg='#64748b').pack(pady=(0, 10))
+                
+                tk.Label(no_results_frame, text="Try adjusting your search or filters.", 
+                        bg='white', font=('Segoe UI', 12), fg='#94a3b7').pack()
+            else:
+                # Create cards for filtered feedback
+                for feedback in filtered_feedback:
+                    self.create_modern_feedback_card(feedback)
             
             # Update canvas scroll region
             self.scrollable_frame.update_idletasks()
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
             
         except Exception as e:
+            print(f"DEBUG: Error in filter_feedback: {str(e)}")
             messagebox.showerror("Error", f"Failed to filter feedback: {str(e)}")
     
     def show_feedback(self):
@@ -196,7 +239,9 @@ class FeedbackManagement:
         search_entry = ModernEntry(search_container, width=25, font=('Segoe UI', 11),
                                   placeholder="Search feedback...")
         search_entry.pack(side='left')
-        search_entry.entry.bind('<KeyRelease>', lambda e: self.filter_feedback())
+        # Get the actual entry widget
+        search_entry_widget = search_entry.entry
+        search_entry_widget.bind('<KeyRelease>', lambda e: self.filter_feedback())
         self.search_entry = search_entry
         
         # Filters
@@ -250,146 +295,174 @@ class FeedbackManagement:
         
         self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        
+        # Add mousewheel scrolling
+        def _on_mousewheel(event):
+            self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
     
     def create_modern_feedback_card(self, feedback):
         """Create a modern feedback card"""
-        # Colors based on status
-        status_colors = {
-            'pending': ('#f59e0b', '#fef3c7'),
-            'in progress': ('#3b82f6', '#dbeafe'),
-            'resolved': ('#10b981', '#d1fae5')
-        }
-        color, bg_color = status_colors.get(feedback['status'], ('#6b7280', '#f3f4f6'))
-        
-        # Type colors
-        type_colors = {
-            'general': ('#6b7280', '#f3f4f6'),
-            'technical': ('#3b82f6', '#dbeafe'),
-            'suggestion': ('#10b981', '#d1fae5'),
-            'complaint': ('#ef4444', '#fee2e2'),
-            'appreciation': ('#f59e0b', '#fef3c7')
-        }
-        type_color, type_bg_color = type_colors.get(feedback['feedback_type'], ('#6b7280', '#f3f4f6'))
-        
-        # Main card
-        card = tk.Frame(self.scrollable_frame, bg='white', relief='flat',
-                       highlightbackground='#e5e7eb', highlightthickness=1)
-        card.pack(fill='x', pady=8, padx=2)
-        
-        inner = tk.Frame(card, bg='white', padx=20, pady=20)
-        inner.pack(fill='x')
-        
-        # Top row: Subject and badges
-        top_row = tk.Frame(inner, bg='white')
-        top_row.pack(fill='x', pady=(0, 15))
-        
-        # Subject
-        subject_label = tk.Label(top_row, text=feedback['subject'], bg='white',
-                               font=('Segoe UI', 14, 'bold'), fg='#1e293b',
-                               wraplength=400, justify='left')
-        subject_label.pack(side='left')
-        
-        # Badges
-        badges_frame = tk.Frame(top_row, bg='white')
-        badges_frame.pack(side='right')
-        
-        # Status badge
-        status_badge = tk.Frame(badges_frame, bg=bg_color)
-        status_badge.pack(side='left', padx=(5, 0))
-        tk.Label(status_badge, text=feedback['status'].upper(), bg=bg_color, fg=color,
-                font=('Segoe UI', 8, 'bold'), padx=8, pady=2).pack()
-        
-        # Type badge
-        type_badge = tk.Frame(badges_frame, bg=type_bg_color)
-        type_badge.pack(side='left', padx=(5, 0))
-        tk.Label(type_badge, text=feedback['feedback_type'].upper(), bg=type_bg_color, fg=type_color,
-                font=('Segoe UI', 8, 'bold'), padx=8, pady=2).pack()
-        
-        # User info
-        user_frame = tk.Frame(inner, bg='white')
-        user_frame.pack(anchor='w', pady=(0, 10))
-        
-        tk.Label(user_frame, text=f"👤 {feedback['user_name']}", bg='white',
-                font=('Segoe UI', 11), fg='#64748b').pack(side='left', padx=(0, 15))
-        
-        if feedback['youth_id']:
-            tk.Label(user_frame, text=f"ID: {feedback['youth_id']}", bg='white',
-                    font=('Segoe UI', 10), fg='#9ca3af').pack(side='left')
-        
-        # Date and linked item
-        info_frame = tk.Frame(inner, bg='white')
-        info_frame.pack(anchor='w', pady=(0, 15))
-        
-        date_str = feedback['created_at'].strftime('%b %d, %Y %H:%M')
-        tk.Label(info_frame, text=f"📅 {date_str}", bg='white',
-                font=('Segoe UI', 10), fg='#64748b').pack(side='left', padx=(0, 15))
-        
-        if feedback['linked_item_id'] and feedback['linked_item_type']:
-            linked_text = f"🔗 {feedback['linked_item_type']}: {feedback['linked_item_id']}"
-            tk.Label(info_frame, text=linked_text, bg='white',
-                    font=('Segoe UI', 10), fg='#64748b').pack(side='left')
-        
-        # Message preview
-        message_preview = feedback['message'][:200] + "..." if len(feedback['message']) > 200 else feedback['message']
-        message_frame = tk.Frame(inner, bg='#f8fafc', relief='flat',
-                                highlightbackground='#e5e7eb', highlightthickness=1)
-        message_frame.pack(fill='x', pady=(0, 15))
-        
-        tk.Label(message_frame, text=message_preview, bg='#f8fafc',
-                font=('Segoe UI', 11), fg='#4b5563', wraplength=600,
-                justify='left', padx=10, pady=10).pack(anchor='w')
-        
-        # Admin reply preview if exists
-        if feedback['admin_reply']:
-            reply_preview = feedback['admin_reply'][:150] + "..." if len(feedback['admin_reply']) > 150 else feedback['admin_reply']
-            reply_frame = tk.Frame(inner, bg='#e0f2fe', relief='flat',
-                                  highlightbackground='#bae6fd', highlightthickness=1)
-            reply_frame.pack(fill='x', pady=(0, 15))
+        try:
+            # Colors based on status
+            status_colors = {
+                'pending': ('#f59e0b', '#fef3c7'),
+                'in progress': ('#3b82f6', '#dbeafe'),
+                'resolved': ('#10b981', '#d1fae5')
+            }
+            color, bg_color = status_colors.get(feedback.get('status', 'pending'), ('#6b7280', '#f3f4f6'))
             
-            tk.Label(reply_frame, text=f"📝 Admin Reply: {reply_preview}", bg='#e0f2fe',
-                    font=('Segoe UI', 10), fg='#0c4a6e', wraplength=580,
-                    justify='left', padx=10, pady=8).pack(anchor='w')
-        
-        # Action buttons
-        btn_frame = tk.Frame(inner, bg='white')
-        btn_frame.pack(fill='x')
-        
-        if feedback['status'] != 'resolved':
-            view_btn = ModernButton(btn_frame, text="View & Respond", 
-                                   command=lambda f=feedback: self.view_feedback(f),
-                                   width=120, height=32, bg='#ec4899', fg='white',
-                                   font=('Segoe UI', 10), radius=6)
-            view_btn.pack(side='left', padx=(0, 5))
+            # Type colors
+            type_colors = {
+                'general': ('#6b7280', '#f3f4f6'),
+                'technical': ('#3b82f6', '#dbeafe'),
+                'suggestion': ('#10b981', '#d1fae5'),
+                'complaint': ('#ef4444', '#fee2e2'),
+                'appreciation': ('#f59e0b', '#fef3c7')
+            }
+            type_color, type_bg_color = type_colors.get(feedback.get('feedback_type', 'general'), ('#6b7280', '#f3f4f6'))
             
-            progress_btn = ModernButton(btn_frame, text="Mark In Progress", 
-                                       command=lambda f=feedback: self.mark_in_progress(f),
-                                       width=130, height=32, bg='#3b82f6', fg='white',
+            # Main card
+            card = tk.Frame(self.scrollable_frame, bg='white', relief='flat',
+                           highlightbackground='#e5e7eb', highlightthickness=1)
+            card.pack(fill='x', pady=8, padx=2)
+            
+            inner = tk.Frame(card, bg='white', padx=20, pady=20)
+            inner.pack(fill='x')
+            
+            # Top row: Subject and badges
+            top_row = tk.Frame(inner, bg='white')
+            top_row.pack(fill='x', pady=(0, 15))
+            
+            # Subject
+            subject = feedback.get('subject', 'No Subject')
+            subject_label = tk.Label(top_row, text=subject, bg='white',
+                                   font=('Segoe UI', 14, 'bold'), fg='#1e293b',
+                                   wraplength=400, justify='left')
+            subject_label.pack(side='left')
+            
+            # Badges
+            badges_frame = tk.Frame(top_row, bg='white')
+            badges_frame.pack(side='right')
+            
+            # Status badge
+            status = feedback.get('status', 'pending')
+            status_badge = tk.Frame(badges_frame, bg=bg_color)
+            status_badge.pack(side='left', padx=(5, 0))
+            tk.Label(status_badge, text=status.upper(), bg=bg_color, fg=color,
+                    font=('Segoe UI', 8, 'bold'), padx=8, pady=2).pack()
+            
+            # Type badge
+            feedback_type = feedback.get('feedback_type', 'general')
+            type_badge = tk.Frame(badges_frame, bg=type_bg_color)
+            type_badge.pack(side='left', padx=(5, 0))
+            tk.Label(type_badge, text=feedback_type.upper(), bg=type_bg_color, fg=type_color,
+                    font=('Segoe UI', 8, 'bold'), padx=8, pady=2).pack()
+            
+            # User info
+            user_frame = tk.Frame(inner, bg='white')
+            user_frame.pack(anchor='w', pady=(0, 10))
+            
+            user_name = feedback.get('user_name', 'Unknown User')
+            tk.Label(user_frame, text=f"👤 {user_name}", bg='white',
+                    font=('Segoe UI', 11), fg='#64748b').pack(side='left', padx=(0, 15))
+            
+            youth_id = feedback.get('youth_id')
+            if youth_id:
+                tk.Label(user_frame, text=f"ID: {youth_id}", bg='white',
+                        font=('Segoe UI', 10), fg='#9ca3af').pack(side='left')
+            
+            # Date and linked item
+            info_frame = tk.Frame(inner, bg='white')
+            info_frame.pack(anchor='w', pady=(0, 15))
+            
+            date_str = feedback['created_at'].strftime('%b %d, %Y %H:%M')
+            tk.Label(info_frame, text=f"📅 {date_str}", bg='white',
+                    font=('Segoe UI', 10), fg='#64748b').pack(side='left', padx=(0, 15))
+            
+            linked_item_id = feedback.get('linked_item_id')
+            linked_item_type = feedback.get('linked_item_type')
+            if linked_item_id and linked_item_type:
+                linked_text = f"🔗 {linked_item_type}: {linked_item_id}"
+                tk.Label(info_frame, text=linked_text, bg='white',
+                        font=('Segoe UI', 10), fg='#64748b').pack(side='left')
+            
+            # Message preview
+            message = feedback.get('message', 'No message')
+            if len(message) > 200:
+                message_preview = message[:200] + "..."
+            else:
+                message_preview = message
+            
+            message_frame = tk.Frame(inner, bg='#f8fafc', relief='flat',
+                                    highlightbackground='#e5e7eb', highlightthickness=1)
+            message_frame.pack(fill='x', pady=(0, 15))
+            
+            tk.Label(message_frame, text=message_preview, bg='#f8fafc',
+                    font=('Segoe UI', 11), fg='#4b5563', wraplength=600,
+                    justify='left', padx=10, pady=10).pack(anchor='w')
+            
+            # Admin reply preview if exists
+            admin_reply = feedback.get('admin_reply')
+            if admin_reply:
+                if len(admin_reply) > 150:
+                    reply_preview = admin_reply[:150] + "..."
+                else:
+                    reply_preview = admin_reply
+                
+                reply_frame = tk.Frame(inner, bg='#e0f2fe', relief='flat',
+                                      highlightbackground='#bae6fd', highlightthickness=1)
+                reply_frame.pack(fill='x', pady=(0, 15))
+                
+                tk.Label(reply_frame, text=f"📝 Admin Reply: {reply_preview}", bg='#e0f2fe',
+                        font=('Segoe UI', 10), fg='#0c4a6e', wraplength=580,
+                        justify='left', padx=10, pady=8).pack(anchor='w')
+            
+            # Action buttons
+            btn_frame = tk.Frame(inner, bg='white')
+            btn_frame.pack(fill='x')
+            
+            status = feedback.get('status', 'pending')
+            if status != 'resolved':
+                view_btn = ModernButton(btn_frame, text="View & Respond", 
+                                       command=lambda f=feedback: self.view_feedback(f),
+                                       width=120, height=32, bg='#ec4899', fg='white',
                                        font=('Segoe UI', 10), radius=6)
-            progress_btn.pack(side='left', padx=(0, 5))
-            
-            resolve_btn = ModernButton(btn_frame, text="Mark Resolved", 
-                                      command=lambda f=feedback: self.mark_resolved(f),
-                                      width=120, height=32, bg='#10b981', fg='white',
-                                      font=('Segoe UI', 10), radius=6)
-            resolve_btn.pack(side='left', padx=(0, 5))
-        else:
-            view_btn = ModernButton(btn_frame, text="View Details", 
-                                   command=lambda f=feedback: self.view_feedback(f),
-                                   width=100, height=32, bg='#6b7280', fg='white',
-                                   font=('Segoe UI', 10), radius=6)
-            view_btn.pack(side='left', padx=(0, 5))
-            
-            reopen_btn = ModernButton(btn_frame, text="Re-open", 
-                                     command=lambda f=feedback: self.reopen_feedback(f),
-                                     width=80, height=32, bg='#f59e0b', fg='white',
-                                     font=('Segoe UI', 10), radius=6)
-            reopen_btn.pack(side='left', padx=(0, 5))
+                view_btn.pack(side='left', padx=(0, 5))
+                
+                progress_btn = ModernButton(btn_frame, text="Mark In Progress", 
+                                           command=lambda f=feedback: self.mark_in_progress(f),
+                                           width=130, height=32, bg='#3b82f6', fg='white',
+                                           font=('Segoe UI', 10), radius=6)
+                progress_btn.pack(side='left', padx=(0, 5))
+                
+                resolve_btn = ModernButton(btn_frame, text="Mark Resolved", 
+                                          command=lambda f=feedback: self.mark_resolved(f),
+                                          width=120, height=32, bg='#10b981', fg='white',
+                                          font=('Segoe UI', 10), radius=6)
+                resolve_btn.pack(side='left', padx=(0, 5))
+            else:
+                view_btn = ModernButton(btn_frame, text="View Details", 
+                                       command=lambda f=feedback: self.view_feedback(f),
+                                       width=100, height=32, bg='#6b7280', fg='white',
+                                       font=('Segoe UI', 10), radius=6)
+                view_btn.pack(side='left', padx=(0, 5))
+                
+                reopen_btn = ModernButton(btn_frame, text="Re-open", 
+                                         command=lambda f=feedback: self.reopen_feedback(f),
+                                         width=80, height=32, bg='#f59e0b', fg='white',
+                                         font=('Segoe UI', 10), radius=6)
+                reopen_btn.pack(side='left', padx=(0, 5))
+                
+        except Exception as e:
+            print(f"DEBUG: Error creating feedback card: {str(e)}")
     
     def view_feedback(self, feedback):
         """Open feedback details window"""
         # Modern modal window
         win = tk.Toplevel(self.root)
-        win.title(f"Feedback: {feedback['subject']}")
+        win.title(f"Feedback: {feedback.get('subject', 'No Subject')}")
         win.geometry("600x700")
         win.configure(bg='white')
         win.resizable(False, False)
@@ -401,6 +474,10 @@ class FeedbackManagement:
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry(f'{width}x{height}+{x}+{y}')
+        
+        # Make window modal
+        win.transient(self.root)
+        win.grab_set()
         
         # Header
         header = tk.Frame(win, bg='#ec4899', height=80)
@@ -422,9 +499,12 @@ class FeedbackManagement:
         # Subject
         tk.Label(content, text="Subject:", bg='white',
                 font=('Segoe UI', 12, 'bold'), fg='#475569').pack(anchor='w', pady=(0, 5))
-        tk.Label(content, text=feedback['subject'], bg='white',
+        
+        subject = feedback.get('subject', 'No Subject')
+        subject_label = tk.Label(content, text=subject, bg='white',
                 font=('Segoe UI', 14), fg='#1e293b', wraplength=500,
-                justify='left').pack(anchor='w', pady=(0, 15))
+                justify='left')
+        subject_label.pack(anchor='w', pady=(0, 15))
         
         # User info with modern styling
         info_card = tk.Frame(content, bg='#f8fafc', relief='flat',
@@ -434,10 +514,12 @@ class FeedbackManagement:
         info_inner = tk.Frame(info_card, bg='#f8fafc', padx=15, pady=15)
         info_inner.pack(fill='x')
         
-        tk.Label(info_inner, text=f"From: {feedback['user_name']}", bg='#f8fafc',
+        user_name = feedback.get('user_name', 'Unknown User')
+        tk.Label(info_inner, text=f"From: {user_name}", bg='#f8fafc',
                 font=('Segoe UI', 11), fg='#64748b').pack(side='left', padx=(0, 20))
         
-        tk.Label(info_inner, text=f"Type: {feedback['feedback_type']}", bg='#f8fafc',
+        feedback_type = feedback.get('feedback_type', 'general')
+        tk.Label(info_inner, text=f"Type: {feedback_type}", bg='#f8fafc',
                 font=('Segoe UI', 11), fg='#64748b').pack(side='left', padx=(0, 20))
         
         date_str = feedback['created_at'].strftime('%B %d, %Y at %I:%M %p')
@@ -454,7 +536,7 @@ class FeedbackManagement:
         
         message_text = tk.Text(message_frame, wrap='word', font=('Segoe UI', 11),
                               bg='#f8fafc', relief='flat', height=8)
-        message_text.insert('1.0', feedback['message'])
+        message_text.insert('1.0', feedback.get('message', 'No message'))
         message_text.config(state='disabled')
         
         scrollbar = tk.Scrollbar(message_frame, orient='vertical', command=message_text.yview)
@@ -464,14 +546,15 @@ class FeedbackManagement:
         scrollbar.pack(side='right', fill='y')
         
         # Update status section (if not resolved)
-        if feedback['status'] != 'resolved':
+        status = feedback.get('status', 'pending')
+        if status != 'resolved':
             tk.Label(content, text="Update Status:", bg='white',
                     font=('Segoe UI', 12, 'bold'), fg='#475569').pack(anchor='w', pady=(10, 5))
             
             status_frame = tk.Frame(content, bg='white')
             status_frame.pack(fill='x', pady=(0, 10))
             
-            self.status_var = tk.StringVar(value=feedback['status'])
+            self.status_var = tk.StringVar(value=status)
             
             # Modern radio buttons
             for text, value in [("In Progress", 'in progress'), ("Resolved", 'resolved')]:
@@ -483,7 +566,8 @@ class FeedbackManagement:
                 
                 # Create radio button
                 indicator = canvas.create_oval(2, 2, 18, 18, outline='#cbd5e1', width=2, fill='white')
-                inner = canvas.create_oval(6, 6, 14, 14, outline='', fill='#ec4899' if value == self.status_var.get() else 'white')
+                inner = canvas.create_oval(6, 6, 14, 14, outline='', 
+                                         fill='#ec4899' if value == self.status_var.get() else 'white')
                 
                 def make_cmd(v, c=canvas, i=inner, ind=indicator):
                     return lambda: [self.status_var.set(v), 
@@ -508,8 +592,9 @@ class FeedbackManagement:
                                      highlightbackground='#cbd5e1', highlightcolor='#4f46e5')
             self.reply_text.pack(fill='x', pady=(0, 20))
             
-            if feedback['admin_reply']:
-                self.reply_text.insert('1.0', feedback['admin_reply'])
+            admin_reply = feedback.get('admin_reply')
+            if admin_reply:
+                self.reply_text.insert('1.0', admin_reply)
             
             # Buttons
             btn_frame = tk.Frame(content, bg='white')
@@ -525,6 +610,31 @@ class FeedbackManagement:
                                      width=100, height=38, bg='#6b7280', fg='white',
                                      font=('Segoe UI', 11), radius=8)
             cancel_btn.pack(side='left')
+        else:
+            # Show existing admin reply for resolved feedback
+            admin_reply = feedback.get('admin_reply')
+            if admin_reply:
+                tk.Label(content, text="Admin Reply:", bg='white',
+                        font=('Segoe UI', 12, 'bold'), fg='#475569').pack(anchor='w', pady=(10, 5))
+                
+                reply_frame = tk.Frame(content, bg='#e0f2fe', relief='flat',
+                                      highlightbackground='#bae6fd', highlightthickness=1)
+                reply_frame.pack(fill='x', pady=(0, 20))
+                
+                reply_text = tk.Text(reply_frame, wrap='word', font=('Segoe UI', 11),
+                                    bg='#e0f2fe', relief='flat', height=4)
+                reply_text.insert('1.0', admin_reply)
+                reply_text.config(state='disabled')
+                reply_text.pack(fill='both', expand=True, padx=10, pady=10)
+            
+            # Close button for resolved feedback
+            btn_frame = tk.Frame(content, bg='white')
+            btn_frame.pack(fill='x')
+            
+            close_modal_btn = ModernButton(btn_frame, text="Close", command=win.destroy,
+                                         width=100, height=38, bg='#6b7280', fg='white',
+                                         font=('Segoe UI', 11), radius=8)
+            close_modal_btn.pack()
     
     def update_feedback(self, feedback, window):
         """Update feedback status and admin reply"""
@@ -644,83 +754,98 @@ class FeedbackManagement:
                 font=('Segoe UI', 28, 'bold'), fg='#1e293b').pack(side='left')
         
         # Get statistics
-        cursor = self.app.db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as total_feedback,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'in progress' THEN 1 ELSE 0 END) as in_progress,
-                SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
-                AVG(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) * 100 as resolution_rate,
-                (SELECT COUNT(DISTINCT user_id) FROM feedback) as unique_users
-            FROM feedback
-        """)
-        
-        stats = cursor.fetchone()
-        cursor.close()
-        
-        # Modern stats cards
-        stats_container = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=20)
-        stats_container.pack(fill='x')
-        
-        main_stats = [
-            ("Total Feedback", stats['total_feedback'] or 0, "#ec4899", "💬"),
-            ("Pending", stats['pending'] or 0, "#f59e0b", "⏳"),
-            ("In Progress", stats['in_progress'] or 0, "#3b82f6", "🔄"),
-            ("Resolved", stats['resolved'] or 0, "#10b981", "✅"),
-            ("Resolution Rate", f"{stats['resolution_rate'] or 0:.1f}%", "#8b5cf6", "📈"),
-            ("Unique Users", stats['unique_users'] or 0, "#6366f1", "👥")
-        ]
-        
-        # Create cards in a 3x2 grid
-        cards_frame = tk.Frame(stats_container, bg='#f8fafc')
-        cards_frame.pack()
-        
-        for i, (title, value, color, icon) in enumerate(main_stats):
-            row, col = divmod(i, 3)
+        try:
+            cursor = self.app.db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_feedback,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'in progress' THEN 1 ELSE 0 END) as in_progress,
+                    SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
+                    AVG(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) * 100 as resolution_rate,
+                    (SELECT COUNT(DISTINCT user_id) FROM feedback) as unique_users
+                FROM feedback
+            """)
             
-            if col == 0:
-                cards_frame.columnconfigure(0, weight=1)
-            if col == 1:
-                cards_frame.columnconfigure(1, weight=1)
-            if col == 2:
-                cards_frame.columnconfigure(2, weight=1)
+            stats = cursor.fetchone()
+            cursor.close()
             
-            card = create_stat_card(cards_frame, title, value, color, icon)
-            card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
-        
-        # Add feedback by type chart
-        type_frame = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=20)
-        type_frame.pack(fill='x')
-        
-        tk.Label(type_frame, text="Feedback by Type", bg='#f8fafc',
-                font=('Segoe UI', 16, 'bold'), fg='#1e293b').pack(anchor='w')
-        
-        type_card = ModernCard(type_frame)
-        type_card.pack(fill='x', pady=10)
-        
-        # Get feedback by type
-        cursor = self.app.db.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT feedback_type, COUNT(*) as count
-            FROM feedback
-            GROUP BY feedback_type
-            ORDER BY count DESC
-        """)
-        
-        type_stats = cursor.fetchall()
-        cursor.close()
-        
-        # Display type statistics
-        for stat in type_stats:
-            frame = tk.Frame(type_card, bg='white')
-            frame.pack(fill='x', padx=20, pady=10)
+            # Modern stats cards
+            stats_container = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=20)
+            stats_container.pack(fill='x')
             
-            tk.Label(frame, text=stat['feedback_type'].title(), bg='white',
-                    font=('Segoe UI', 11), fg='#64748b').pack(side='left')
+            main_stats = [
+                ("Total Feedback", stats['total_feedback'] or 0, "#ec4899", "💬"),
+                ("Pending", stats['pending'] or 0, "#f59e0b", "⏳"),
+                ("In Progress", stats['in_progress'] or 0, "#3b82f6", "🔄"),
+                ("Resolved", stats['resolved'] or 0, "#10b981", "✅"),
+                ("Resolution Rate", f"{stats['resolution_rate'] or 0:.1f}%", "#8b5cf6", "📈"),
+                ("Unique Users", stats['unique_users'] or 0, "#6366f1", "👥")
+            ]
             
-            tk.Label(frame, text=str(stat['count']), bg='white',
-                    font=('Segoe UI', 11, 'bold'), fg='#1e293b').pack(side='right')
+            # Create cards in a 3x2 grid
+            cards_frame = tk.Frame(stats_container, bg='#f8fafc')
+            cards_frame.pack()
+            
+            for i, (title, value, color, icon) in enumerate(main_stats):
+                row, col = divmod(i, 3)
+                
+                if col == 0:
+                    cards_frame.columnconfigure(0, weight=1)
+                if col == 1:
+                    cards_frame.columnconfigure(1, weight=1)
+                if col == 2:
+                    cards_frame.columnconfigure(2, weight=1)
+                
+                card = create_stat_card(cards_frame, title, value, color, icon)
+                card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
+            
+            # Add feedback by type chart
+            type_frame = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=20)
+            type_frame.pack(fill='x')
+            
+            tk.Label(type_frame, text="Feedback by Type", bg='#f8fafc',
+                    font=('Segoe UI', 16, 'bold'), fg='#1e293b').pack(anchor='w')
+            
+            type_card = ModernCard(type_frame)
+            type_card.pack(fill='x', pady=10)
+            
+            # Get feedback by type
+            cursor = self.app.db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT feedback_type, COUNT(*) as count
+                FROM feedback
+                GROUP BY feedback_type
+                ORDER BY count DESC
+            """)
+            
+            type_stats = cursor.fetchall()
+            cursor.close()
+            
+            # Display type statistics
+            for stat in type_stats:
+                frame = tk.Frame(type_card, bg='white')
+                frame.pack(fill='x', padx=20, pady=10)
+                
+                tk.Label(frame, text=stat['feedback_type'].title(), bg='white',
+                        font=('Segoe UI', 11), fg='#64748b').pack(side='left')
+                
+                tk.Label(frame, text=str(stat['count']), bg='white',
+                        font=('Segoe UI', 11, 'bold'), fg='#1e293b').pack(side='right')
+            
+            # If no feedback exists
+            if not stats['total_feedback']:
+                no_data_frame = tk.Frame(type_card, bg='white')
+                no_data_frame.pack(fill='x', padx=20, pady=10)
+                
+                tk.Label(no_data_frame, text="No feedback data available", bg='white',
+                        font=('Segoe UI', 11), fg='#94a3b8').pack()
+                
+        except Exception as e:
+            print(f"DEBUG: Error in show_analytics: {str(e)}")
+            error_label = tk.Label(self.content, text=f"Error loading analytics: {str(e)}",
+                                 bg='#f8fafc', fg='red', font=('Segoe UI', 11))
+            error_label.pack(pady=50)
     
     def export_feedback(self):
         """Export feedback to CSV"""
@@ -760,15 +885,19 @@ class FeedbackManagement:
             feedback_data = cursor.fetchall()
             cursor.close()
             
+            if not feedback_data:
+                messagebox.showinfo("Info", "No feedback data to export.")
+                return
+            
             # Write to CSV
             with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-                if feedback_data:
-                    fieldnames = feedback_data[0].keys()
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writeheader()
-                    writer.writerows(feedback_data)
+                fieldnames = feedback_data[0].keys()
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(feedback_data)
             
             messagebox.showinfo("Success", f"Feedback exported successfully to:\n{file_path}")
             
         except Exception as e:
+            print(f"DEBUG: Error in export_feedback: {str(e)}")
             messagebox.showerror("Error", f"Failed to export feedback: {str(e)}")
