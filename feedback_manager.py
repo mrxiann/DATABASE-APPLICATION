@@ -21,6 +21,9 @@ class FeedbackManagement:
         self.content = tk.Frame(self.main, bg='#f8fafc')
         self.content.pack(side='right', fill='both', expand=True)
         
+        self.all_feedback = []  # Store all feedback
+        self.current_feedback = []  # Store filtered feedback
+        
         self.show_feedback()
     
     def create_sidebar(self):
@@ -75,6 +78,97 @@ class FeedbackManagement:
                             b.config(bg='#f8fafc') if not active else None)
                     btn.bind("<Leave>", lambda e, b=btn, active=active: 
                             b.config(bg='white' if not active else '#fdf2f8'))
+    
+    def load_all_feedback(self):
+        """Load all feedback from database"""
+        try:
+            # Clear existing cards
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
+            
+            # Load feedback from database
+            cursor = self.app.db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT f.*, u.name as user_name, u.youth_id
+                FROM feedback f
+                JOIN users u ON f.user_id = u.id
+                ORDER BY f.created_at DESC
+            """)
+            feedback_list = cursor.fetchall()
+            cursor.close()
+            
+            # Convert date strings to datetime objects
+            for feedback in feedback_list:
+                feedback['created_at'] = datetime.strptime(
+                    str(feedback['created_at']), '%Y-%m-%d %H:%M:%S'
+                )
+                if feedback['updated_at']:
+                    feedback['updated_at'] = datetime.strptime(
+                        str(feedback['updated_at']), '%Y-%m-%d %H:%M:%S'
+                    )
+            
+            self.all_feedback = feedback_list
+            self.current_feedback = feedback_list.copy()
+            
+            # Create cards for each feedback
+            for feedback in feedback_list:
+                self.create_modern_feedback_card(feedback)
+            
+            # Update canvas scroll region
+            self.scrollable_frame.update_idletasks()
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load feedback: {str(e)}")
+    
+    def filter_feedback(self):
+        """Filter feedback based on search and filters"""
+        try:
+            # Clear existing cards
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
+            
+            # Get filter values
+            search_term = self.search_entry.get().lower()
+            status_filter = self.status_filter.get().lower()
+            type_filter = self.type_filter.get().lower()
+            
+            # Filter feedback
+            filtered_feedback = []
+            for feedback in self.all_feedback:
+                # Search filter
+                if search_term:
+                    search_match = (
+                        search_term in feedback['subject'].lower() or
+                        search_term in feedback['message'].lower() or
+                        search_term in feedback['user_name'].lower() or
+                        (feedback['youth_id'] and search_term in feedback['youth_id'].lower())
+                    )
+                    if not search_match:
+                        continue
+                
+                # Status filter
+                if status_filter != 'all' and feedback['status'] != status_filter:
+                    continue
+                
+                # Type filter
+                if type_filter != 'all' and feedback['feedback_type'] != type_filter:
+                    continue
+                
+                filtered_feedback.append(feedback)
+            
+            self.current_feedback = filtered_feedback
+            
+            # Create cards for filtered feedback
+            for feedback in filtered_feedback:
+                self.create_modern_feedback_card(feedback)
+            
+            # Update canvas scroll region
+            self.scrollable_frame.update_idletasks()
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to filter feedback: {str(e)}")
     
     def show_feedback(self):
         for widget in self.content.winfo_children():
@@ -291,10 +385,8 @@ class FeedbackManagement:
                                      font=('Segoe UI', 10), radius=6)
             reopen_btn.pack(side='left', padx=(0, 5))
     
-    # REST OF THE METHODS (load_all_feedback, filter_feedback, view_feedback, etc.)
-    # KEEP THE SAME BACKEND LOGIC, UPDATE UI COMPONENTS TO USE MODERN STYLING
-    
     def view_feedback(self, feedback):
+        """Open feedback details window"""
         # Modern modal window
         win = tk.Toplevel(self.root)
         win.title(f"Feedback: {feedback['subject']}")
@@ -416,6 +508,9 @@ class FeedbackManagement:
                                      highlightbackground='#cbd5e1', highlightcolor='#4f46e5')
             self.reply_text.pack(fill='x', pady=(0, 20))
             
+            if feedback['admin_reply']:
+                self.reply_text.insert('1.0', feedback['admin_reply'])
+            
             # Buttons
             btn_frame = tk.Frame(content, bg='white')
             btn_frame.pack(fill='x')
@@ -430,11 +525,114 @@ class FeedbackManagement:
                                      width=100, height=38, bg='#6b7280', fg='white',
                                      font=('Segoe UI', 11), radius=8)
             cancel_btn.pack(side='left')
-        
-        # KEEP THE REST OF THE METHOD WITH ORIGINAL BACKEND LOGIC
-        # Only update the UI components
+    
+    def update_feedback(self, feedback, window):
+        """Update feedback status and admin reply"""
+        try:
+            new_status = self.status_var.get()
+            admin_reply = self.reply_text.get("1.0", tk.END).strip()
+            
+            cursor = self.app.db.cursor()
+            cursor.execute("""
+                UPDATE feedback 
+                SET status = %s, 
+                    admin_reply = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (new_status, admin_reply, feedback['id']))
+            
+            self.app.db.commit()
+            cursor.close()
+            
+            messagebox.showinfo("Success", "Feedback updated successfully!")
+            window.destroy()
+            
+            # Refresh feedback display
+            self.load_all_feedback()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update feedback: {str(e)}")
+    
+    def mark_in_progress(self, feedback):
+        """Mark feedback as in progress"""
+        try:
+            cursor = self.app.db.cursor()
+            cursor.execute("""
+                UPDATE feedback 
+                SET status = 'in progress',
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (feedback['id'],))
+            
+            self.app.db.commit()
+            cursor.close()
+            
+            messagebox.showinfo("Success", "Feedback marked as in progress!")
+            
+            # Refresh feedback display
+            self.load_all_feedback()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update feedback: {str(e)}")
+    
+    def mark_resolved(self, feedback):
+        """Mark feedback as resolved"""
+        try:
+            cursor = self.app.db.cursor()
+            cursor.execute("""
+                UPDATE feedback 
+                SET status = 'resolved',
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (feedback['id'],))
+            
+            self.app.db.commit()
+            cursor.close()
+            
+            messagebox.showinfo("Success", "Feedback marked as resolved!")
+            
+            # Refresh feedback display
+            self.load_all_feedback()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update feedback: {str(e)}")
+    
+    def reopen_feedback(self, feedback):
+        """Re-open resolved feedback"""
+        try:
+            cursor = self.app.db.cursor()
+            cursor.execute("""
+                UPDATE feedback 
+                SET status = 'pending',
+                    updated_at = NOW()
+                WHERE id = %s
+            """, (feedback['id'],))
+            
+            self.app.db.commit()
+            cursor.close()
+            
+            messagebox.showinfo("Success", "Feedback re-opened!")
+            
+            # Refresh feedback display
+            self.load_all_feedback()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update feedback: {str(e)}")
+    
+    def show_pending(self):
+        """Show only pending feedback"""
+        self.show_feedback()
+        self.status_filter.set('pending')
+        self.filter_feedback()
+    
+    def show_resolved(self):
+        """Show only resolved feedback"""
+        self.show_feedback()
+        self.status_filter.set('resolved')
+        self.filter_feedback()
     
     def show_analytics(self):
+        """Show feedback analytics"""
         for widget in self.content.winfo_children():
             widget.destroy()
         
@@ -445,7 +643,7 @@ class FeedbackManagement:
         tk.Label(header_frame, text="📊 Feedback Analytics", bg='#f8fafc',
                 font=('Segoe UI', 28, 'bold'), fg='#1e293b').pack(side='left')
         
-        # Get statistics (same backend logic)
+        # Get statistics
         cursor = self.app.db.cursor(dictionary=True)
         cursor.execute("""
             SELECT 
@@ -490,3 +688,87 @@ class FeedbackManagement:
             
             card = create_stat_card(cards_frame, title, value, color, icon)
             card.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')
+        
+        # Add feedback by type chart
+        type_frame = tk.Frame(self.content, bg='#f8fafc', padx=30, pady=20)
+        type_frame.pack(fill='x')
+        
+        tk.Label(type_frame, text="Feedback by Type", bg='#f8fafc',
+                font=('Segoe UI', 16, 'bold'), fg='#1e293b').pack(anchor='w')
+        
+        type_card = ModernCard(type_frame)
+        type_card.pack(fill='x', pady=10)
+        
+        # Get feedback by type
+        cursor = self.app.db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT feedback_type, COUNT(*) as count
+            FROM feedback
+            GROUP BY feedback_type
+            ORDER BY count DESC
+        """)
+        
+        type_stats = cursor.fetchall()
+        cursor.close()
+        
+        # Display type statistics
+        for stat in type_stats:
+            frame = tk.Frame(type_card, bg='white')
+            frame.pack(fill='x', padx=20, pady=10)
+            
+            tk.Label(frame, text=stat['feedback_type'].title(), bg='white',
+                    font=('Segoe UI', 11), fg='#64748b').pack(side='left')
+            
+            tk.Label(frame, text=str(stat['count']), bg='white',
+                    font=('Segoe UI', 11, 'bold'), fg='#1e293b').pack(side='right')
+    
+    def export_feedback(self):
+        """Export feedback to CSV"""
+        try:
+            # Ask for save location
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Export Feedback"
+            )
+            
+            if not file_path:
+                return
+            
+            # Get all feedback
+            cursor = self.app.db.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT 
+                    f.id,
+                    u.name as user_name,
+                    u.email,
+                    u.youth_id,
+                    f.subject,
+                    f.message,
+                    f.feedback_type,
+                    f.status,
+                    f.admin_reply,
+                    f.linked_item_type,
+                    f.linked_item_id,
+                    f.created_at,
+                    f.updated_at
+                FROM feedback f
+                JOIN users u ON f.user_id = u.id
+                ORDER BY f.created_at DESC
+            """)
+            
+            feedback_data = cursor.fetchall()
+            cursor.close()
+            
+            # Write to CSV
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                if feedback_data:
+                    fieldnames = feedback_data[0].keys()
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(feedback_data)
+            
+            messagebox.showinfo("Success", f"Feedback exported successfully to:\n{file_path}")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export feedback: {str(e)}")
