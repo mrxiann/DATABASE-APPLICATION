@@ -379,10 +379,12 @@ class YouthDashboard:
         is_registered = cursor.fetchone()[0] > 0
         cursor.close()
         
-        # Register button
+        # Register button with improved colors
         btn_text = "✅ Already Registered" if is_registered else "Register Now"
         btn_state = 'disabled' if is_registered else 'normal'
-        btn_bg = '#6b7280' if is_registered else '#4f46e5'
+        # Modern colors: Purple for active, muted gray for disabled with clear text
+        btn_bg = '#9ca3af' if is_registered else '#7c3aed'  # Lighter gray for disabled, vibrant purple for active
+        btn_fg = '#f9fafb' if is_registered else 'white'  # Light gray text on disabled, white on active
         
         def register_event():
             try:
@@ -404,9 +406,12 @@ class YouthDashboard:
                 if 'cursor' in locals():
                     cursor.close()
         
-        tk.Button(inner, text=btn_text, bg=btn_bg, fg='white',
-                 font=('Helvetica', 11), cursor='hand2' if not is_registered else 'arrow',
-                 state=btn_state, command=register_event).pack(anchor='e')
+        tk.Button(inner, text=btn_text, bg=btn_bg, fg=btn_fg,
+                 font=('Helvetica', 11, 'bold' if not is_registered else 'normal'),
+                 cursor='hand2' if not is_registered else 'arrow',
+                 state=btn_state, command=register_event,
+                 activebackground='#6d28d9' if not is_registered else btn_bg,
+                 activeforeground='white' if not is_registered else btn_fg).pack(anchor='e')
     
     def show_opportunities(self):
         # Clear content
@@ -562,10 +567,12 @@ class YouthDashboard:
         already_applied = cursor.fetchone()[0] > 0
         cursor.close()
         
-        # Apply button
+        # Apply button with improved colors
         btn_text = "✅ Already Applied" if already_applied else "Apply Now"
         btn_state = 'disabled' if already_applied else 'normal'
-        btn_bg = '#6b7280' if already_applied else '#4f46e5'
+        # Modern gradient-inspired colors: Teal for active, soft gray for disabled
+        btn_bg = '#9ca3af' if already_applied else '#0d9488'  # Teal for active, light gray for disabled
+        btn_fg = '#f9fafb' if already_applied else 'white'   # Light gray text on disabled, white on active
         
         def apply_opportunity():
             try:
@@ -587,9 +594,12 @@ class YouthDashboard:
                 if 'cursor' in locals():
                     cursor.close()
         
-        tk.Button(inner, text=btn_text, bg=btn_bg, fg='white',
-                 font=('Helvetica', 11), cursor='hand2' if not already_applied else 'arrow',
-                 state=btn_state, command=apply_opportunity).pack(anchor='e', pady=(10, 0))
+        tk.Button(inner, text=btn_text, bg=btn_bg, fg=btn_fg,
+                 font=('Helvetica', 11, 'bold' if not already_applied else 'normal'),
+                 cursor='hand2' if not already_applied else 'arrow',
+                 state=btn_state, command=apply_opportunity,
+                 activebackground='#0f766e' if not already_applied else btn_bg,
+                 activeforeground='white' if not already_applied else btn_fg).pack(anchor='e', pady=(10, 0))
     
     def show_profile(self):
         # Clear content
@@ -605,8 +615,10 @@ class YouthDashboard:
         
         # Edit button
         tk.Button(header, text="✏️ Edit Profile", command=self.edit_profile,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 11),
-                 cursor='hand2', padx=15).pack(side='right')
+                 bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
+                 cursor='hand2', padx=15, pady=5,
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(side='right')
         
         # Profile form
         form_frame = tk.Frame(self.content, bg='white', padx=30)
@@ -880,11 +892,15 @@ class YouthDashboard:
         
         tk.Button(btn_frame, text="Save Changes", command=save_profile,
                  bg='#10b981', fg='white', font=('Helvetica', 11, 'bold'),
-                 width=20, pady=10, cursor='hand2').pack(side='left', padx=5)
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#0d9c6f',
+                 activeforeground='white').pack(side='left', padx=5)
         
         tk.Button(btn_frame, text="Cancel", command=win.destroy,
                  bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=10, pady=10, cursor='hand2').pack(side='left', padx=5)
+                 width=10, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(side='left', padx=5)
     
     def show_feedback(self):
         # Clear content
@@ -901,8 +917,10 @@ class YouthDashboard:
         # Create feedback button
         tk.Button(header, text="➕ Submit New Feedback", 
                  command=self.submit_feedback,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 11),
-                 cursor='hand2', padx=15).pack(side='right')
+                 bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
+                 cursor='hand2', padx=15, pady=5,
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(side='right')
         
         # Feedback history in scrollable container
         container = tk.Frame(self.content, bg='#f8fafc', padx=30)
@@ -1000,8 +1018,10 @@ class YouthDashboard:
             self.view_feedback_details(feedback)
         
         tk.Button(inner, text="View Details", command=view_feedback,
-                 bg='#4f46e5', fg='white', font=('Helvetica', 10),
-                 padx=15, pady=5, cursor='hand2').pack(anchor='e', pady=(5, 0))
+                 bg='#4f46e5', fg='white', font=('Helvetica', 10, 'bold'),
+                 padx=15, pady=5, cursor='hand2',
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(anchor='e', pady=(5, 0))
     
     def view_feedback_details(self, feedback):
         win = tk.Toplevel(self.root)
@@ -1085,8 +1105,10 @@ class YouthDashboard:
             reply_text.pack(fill='x', padx=5, pady=5)
         
         tk.Button(win, text="Close", command=win.destroy,
-                 bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=20, pady=10, cursor='hand2').pack(pady=20)
+                 bg='#6b7280', fg='white', font=('Helvetica', 11, 'bold'),
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(pady=20)
     
     def submit_feedback(self):
         win = tk.Toplevel(self.root)
@@ -1153,8 +1175,12 @@ class YouthDashboard:
         
         tk.Button(win, text="Submit Feedback", command=submit,
                  bg='#4f46e5', fg='white', font=('Helvetica', 11, 'bold'),
-                 width=20, pady=10, cursor='hand2').pack(pady=20)
+                 width=20, pady=10, cursor='hand2',
+                 activebackground='#4338ca',
+                 activeforeground='white').pack(pady=20)
         
         tk.Button(win, text="Cancel", command=win.destroy,
                  bg='#6b7280', fg='white', font=('Helvetica', 11),
-                 width=10, pady=10, cursor='hand2').pack(pady=(0, 20))
+                 width=10, pady=10, cursor='hand2',
+                 activebackground='#4b5563',
+                 activeforeground='white').pack(pady=(0, 20))
